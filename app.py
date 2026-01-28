@@ -67,12 +67,13 @@ st.markdown("""
     .teacher-tag { 
         display: inline-block; 
         margin-top: 15px; 
-        padding: 4px 12px; 
+        padding: 6px 15px; 
         background: #FFF3E0; 
         color: #E64A19;
         border-radius: 8px; 
-        font-size: 13px; 
+        font-size: 14px; 
         font-weight: bold; 
+        border: 1px dashed #FFAB91;
     }
 
     /* --- Cards (便利貼風格) --- */
@@ -407,7 +408,7 @@ def main():
     <div class="header-container">
         <h1 class="main-title">Remiad</h1>
         <div class="sub-title">日子、天氣與白天</div>
-        <div class="teacher-tag">主題教學</div>
+        <div class="teacher-tag">講師：胡美芳 | 教材提供者：胡美芳</div>
     </div>
     """, unsafe_allow_html=True)
     
