@@ -270,18 +270,6 @@ def show_learning_mode():
             display_amis = item['amis']
             if "kasuvucan" in display_amis:
 
-這是一份將原本程式碼徹底改造為 「極簡北歐冷調風」 (Nordic Minimalist Style) 的完整 Streamlit 程式碼。
-我為您進行了以下前端與視覺的調整：
-
-   1. 色彩計畫 (Color Palette)：全面棄用暖橘與米色，改用極簡的冷調灰、冰川藍與碳黑。背景使用純淨的 #F8F9FA，搭配微細的冷調線條，展現斯堪地那維亞的寧靜感。
-   2. 字體與排版 (Typography)：全局導入現代感與高可讀性的英文字體 Inter 與中文字體 Noto Sans TC，字體線條簡練乾淨。
-   3. 區塊設計 (Components)：
-   * 標頭 (Header)：取消紙膠帶與厚重陰影，改用無邊框、精緻微陰影與左側冰川藍「現代裝飾條」的洗練洗頭。
-      * 卡片與區塊 (Cards & Boxes)：卡片改為低調的極簡細邊框與柔和懸停（Hover）淡入放大效果。
-      * 按鈕與標籤 (Buttons & Tabs)：按鈕與選擇標籤全面換上帶有現代感的低飽和度灰藍色系。
-   
-以下為 100% 完整無刪減 的 Python 程式碼，您可以直接複製並執行：
-
 import streamlit as stimport timeimport osimport randomfrom gtts import gTTSfrom io import BytesIO
 # --- 0. 系統配置 ---
 st.set_page_config(
