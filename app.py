@@ -1,3 +1,8 @@
+書嫻，沒問題！我已經將「認證考試說明」的標題加上了您提供的 PDF 連結。在 Streamlit 中，我們可以直接在 `st.subheader()` 裡面使用 Markdown 的超連結語法 `[顯示文字](連結網址)` 來達成這個功能。
+
+以下是為您準備的完整版（不省略／不簡化）程式碼，請直接複製並覆蓋原本的 `app.py`：
+
+```python
 import streamlit as st
 import random
 import json
@@ -5,7 +10,7 @@ import os
 import re
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.1.2 (Build 20260727 - Situational QA Hidden)"
+APP_VERSION = "v2.1.4 (Build 20260727 - Exam Guide Link)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -274,7 +279,7 @@ def render_qa(line, prefix):
         st.info(line)
 
 def render_picture(line, prefix):
-    """渲染看圖表達"""
+    """渲染看圖表達，並支援動態載入對應題號圖片"""
     try:
         text = line
         pic = text
@@ -309,9 +314,30 @@ def render_picture(line, prefix):
             else:
                 hint = hint_part.strip()
         
+        # 🌟 動態讀取對應圖片邏輯 (假設 prefix 格式為 "看圖表達_0")
+        try:
+            # 從 prefix 中解析題號 (index + 1)
+            idx = int(prefix.split('_')[-1]) + 1
+            img_path_jpg = f"assets/images/picture_{idx}.jpg"
+            img_path_png = f"assets/images/picture_{idx}.png"
+            
+            if os.path.exists(img_path_jpg):
+                st.image(img_path_jpg, use_container_width=True)
+            elif os.path.exists(img_path_png):
+                st.image(img_path_png, use_container_width=True)
+            else:
+                st.info(f"🖼️ 圖片佔位區：若要顯示圖片，請將圖片命名為 `picture_{idx}.jpg` 或 `.png`，並放置於 `assets/images/` 資料夾中。")
+        except:
+            pass # 若解析題號失敗則安全跳過
+
         st.markdown(f"🖼️ **圖片情境：** {pic}")
+        
         if hint:
             st.caption(f"中文提示：{hint}")
+            
+        # 加入輸入框作為草稿區
+        st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="可以在此輸入您的口說草稿...")
+            
         if ans or ana:
             if st.toggle("💡 顯示作答參考", key=f"t_{prefix}"):
                 msg = ""
@@ -422,7 +448,8 @@ def main():
     db = load_question_bank()
 
     if current_tab == "📋 認證考試說明":
-        st.subheader("📋 認證考試說明")
+        # 🌟 更新這裡：加入您提供的超連結
+        st.subheader("📋 [認證考試說明](https://lokahsu.ilrdf.org.tw/web_lokahsu/Files/Guide/1_20251211_162558.pdf)")
         st.divider()
         st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫。")
 
@@ -469,3 +496,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+```
