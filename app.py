@@ -304,7 +304,7 @@ def render_picture(line, prefix):
             else:
                 hint = hint_part.strip()
 
-        # 🌟 動態讀取對應圖片邏輯 (假設 prefix 格式為 "看圖表達_0")
+        # 🌟 動態讀取對應圖片邏輯
         try:
             # 從 prefix 中解析題號 (index + 1)
             idx = int(prefix.split('_')[-1]) + 1
@@ -398,7 +398,7 @@ def render_section(section_name, db):
 def main():
     st.set_page_config(page_title="中高級族語認證", page_icon="🌾", layout="centered", initial_sidebar_state="collapsed")
 
-    # 民族風 (Ethnic Style) CSS [29, 修改樣式]
+    # 民族風 (Ethnic Style) CSS
     st.markdown("""
     <style>
     /* 大地色系背景 */
@@ -497,4 +497,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-（請注意：以上程式碼直接運行即可套用民族風樣式。所有關於圖片與音訊的載入路徑均與您的原始環境設置保持一致，不影響實際功能的運作）。
