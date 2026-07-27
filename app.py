@@ -13,19 +13,19 @@ APP_VERSION = "v2.1.4 (Build 20260727 - Exam Guide Link)"
 VOCABULARY = []
 SENTENCES = []
 
-def init_quiz(): 
+def init_quiz():
     pass
 
-def play_audio(): 
+def play_audio():
     pass
 
-def show_learning_mode(): 
+def show_learning_mode():
     pass
 
-def show_quiz_mode(): 
+def show_quiz_mode():
     pass
 
-def show_debug_info(): 
+def show_debug_info():
     pass
 
 # 原始聽力題庫 (15題標準數據庫，完全保留)
@@ -107,7 +107,7 @@ def load_question_bank():
         if not line:
             save_question()
             continue
-            
+        
         # 判斷是否為題型切換標題
         if "一、選擇題（聽音選詞）" in line: save_question(); current_section = "聽音選詞"
         elif "二、選擇題（對話理解）" in line: save_question(); current_section = "對話理解"
@@ -127,9 +127,9 @@ def load_question_bank():
         else:
             if current_question:
                 current_question.append(line)
-                
+
     save_question() # 儲存最後一題
-            
+
     return db
 
 # ==========================================
@@ -144,8 +144,8 @@ def render_mcq(line, prefix):
 
         # 限制分割次數，並明確取值
         parts = line.split("(A)", 1)
-        q_part = parts[0].strip()
-        rest = "(A)" + parts[1]
+        q_part = parts.strip()
+        rest = "(A)" + parts
         
         opts_str = rest
         ans_str = ""
@@ -153,13 +153,13 @@ def render_mcq(line, prefix):
         
         if "答案：" in rest:
             ans_parts = rest.split("答案：", 1)
-            opts_str = ans_parts[0].strip()
-            ans_ana = ans_parts[1]
+            opts_str = ans_parts.strip()
+            ans_ana = ans_parts
             
             if "分析：" in ans_ana:
                 final_parts = ans_ana.split("分析：", 1)
-                ans_str = final_parts[0].strip("。 ")
-                ana_str = final_parts[1].strip()
+                ans_str = final_parts.strip("。 ")
+                ana_str = final_parts.strip()
             else:
                 ans_str = ans_ana.strip("。 ")
 
@@ -170,15 +170,15 @@ def render_mcq(line, prefix):
                 st.markdown(f"**{q_part}**")
         else:
             st.markdown(f"**{q_part}**")
-        
+
         # 安全切割四個選項
         opts = []
         for tag in ["(A)", "(B)", "(C)", "(D)"]:
             if tag in opts_str:
-                opt_text = opts_str.split(tag, 1)[1]
+                opt_text = opts_str.split(tag, 1)
                 for next_tag in ["(B)", "(C)", "(D)"]:
                     if next_tag > tag and next_tag in opt_text:
-                        opt_text = opt_text.split(next_tag, 1)[0]
+                        opt_text = opt_text.split(next_tag, 1)
                 opts.append(tag + " " + opt_text.strip())
 
         user_ans = st.radio("請選擇：", opts, index=None, key=prefix)
@@ -196,7 +196,7 @@ def render_mcq(line, prefix):
             else:
                 st.error(f"❌ 錯誤。正確答案：{ans_str}。" + (f"分析：{ana_str}" if ana_str else ""))
     except Exception as e:
-        st.info(line) 
+        st.info(line)
 
 def render_reading(line, prefix):
     """渲染段落朗讀"""
@@ -205,12 +205,12 @@ def render_reading(line, prefix):
         ch_part = ""
         if "(中文：" in line:
             parts = line.split("(中文：", 1)
-            q_part = parts[0].strip()
-            ch_part = parts[1].strip(")")
+            q_part = parts.strip()
+            ch_part = parts.strip(")")
         elif "(中文大意：" in line:
             parts = line.split("(中文大意：", 1)
-            q_part = parts[0].strip()
-            ch_part = parts[1].strip(")")
+            q_part = parts.strip()
+            ch_part = parts.strip(")")
         
         st.markdown(f"📖 **{q_part}**")
         if ch_part:
@@ -230,28 +230,28 @@ def render_qa(line, prefix):
         
         if "中文：" in text:
             parts = text.split("中文：", 1)
-            q_am = parts[0].strip()
-            text = parts[1]
+            q_am = parts.strip()
+            text = parts
             
         if "參考回答：" in text:
             parts = text.split("參考回答：", 1)
-            ch_hint = parts[0].strip()
-            text = parts[1]
+            ch_hint = parts.strip()
+            text = parts
         elif "作答參考：" in text:
             parts = text.split("作答參考：", 1)
-            ch_hint = parts[0].strip()
-            text = parts[1]
+            ch_hint = parts.strip()
+            text = parts
             
         if "分析：" in text:
             parts = text.split("分析：", 1)
-            ans = parts[0].strip()
-            ana = parts[1].strip()
+            ans = parts.strip()
+            ana = parts.strip()
         else:
-            if not ans: 
+            if not ans:
                 ans = text.strip()
-        
+
         q_am = q_am.replace("題目：", " 題目：")
-        
+
         # 🌟 口說測驗-情境問答專屬：隱藏題目與提示功能
         is_situational = "情境問答" in prefix
         if is_situational:
@@ -284,31 +284,31 @@ def render_picture(line, prefix):
         
         if "圖片情境：" in text:
             parts = text.split("圖片情境：", 1)
-            pic = parts[1]
+            pic = parts
             
         if "中文提示：" in pic:
             parts = pic.split("中文提示：", 1)
-            pic = parts[0].strip()
-            hint_part = parts[1]
+            pic = parts.strip()
+            hint_part = parts
             
             if "作答參考：" in hint_part:
                 h_parts = hint_part.split("作答參考：", 1)
-                hint = h_parts[0].strip()
-                ans_part = h_parts[1]
+                hint = h_parts.strip()
+                ans_part = h_parts
                 
                 if "重點分析：" in ans_part:
                     a_parts = ans_part.split("重點分析：", 1)
-                    ans = a_parts[0].strip()
-                    ana = a_parts[1].strip()
+                    ans = a_parts.strip()
+                    ana = a_parts.strip()
                 elif "重點：" in ans_part:
                     a_parts = ans_part.split("重點：", 1)
-                    ans = a_parts[0].strip()
-                    ana = a_parts[1].strip()
+                    ans = a_parts.strip()
+                    ana = a_parts.strip()
                 else:
                     ans = ans_part.strip()
             else:
                 hint = hint_part.strip()
-        
+
         # 🌟 動態讀取對應圖片邏輯 (假設 prefix 格式為 "看圖表達_0")
         try:
             # 從 prefix 中解析題號 (index + 1)
@@ -352,13 +352,13 @@ def render_dictation(line, prefix):
         
         if "中文：" in text:
             parts = text.split("中文：", 1)
-            am = parts[0].replace("阿美語：", "").strip()
-            text = parts[1]
+            am = parts.replace("阿美語：", "").strip()
+            text = parts
             
             if "分析：" in text:
                 sub_parts = text.split("分析：", 1)
-                ch = sub_parts[0].strip()
-                ana = sub_parts[1].strip()
+                ch = sub_parts.strip()
+                ana = sub_parts.strip()
             else:
                 ch = text.strip()
         
@@ -368,7 +368,7 @@ def render_dictation(line, prefix):
         # 🌟 寫作測驗專屬：隱藏聽寫原文功能
         if st.toggle("👁️ 顯示聽寫原文", key=f"t_show_dict_{prefix}"):
             st.markdown(f"✍️ **{am}**")
-            
+
         if ch or ana:
             if st.toggle("💡 顯示翻譯與分析", key=f"t_{prefix}"):
                 msg = ""
@@ -405,22 +405,26 @@ def render_section(section_name, db):
 # ==========================================
 def main():
     st.set_page_config(page_title="中高級認證", page_icon="🎓", layout="centered", initial_sidebar_state="collapsed")
-
-    # 極簡北歐冷調風 (Minimalist Nordic Cold Tone) CSS
+    
+    # 🌊 深度海洋風格 (Deep Ocean Style) CSS [由 CODE VAJRA V2.2 覆寫渲染]
     st.markdown("""
     <style>
     .quiz-card {
-        background-color: #F8F9FA;
+        background-color: #E0F7FA; /* 淺海藍基底色 (Shallow Ocean Cyan) */
         padding: 24px;
         border-radius: 12px;
-        border: 1px solid #E9ECEF;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid #80DEEA; /* 珊瑚水藍邊界 (Coral Blue Border) */
+        box-shadow: 0 4px 12px rgba(0, 96, 100, 0.15); /* 深海壓力陰影 (Deep Sea Shadow) */
         margin-top: 15px;
         margin-bottom: 25px;
         transition: all 0.3s ease;
-        color: #343A40;
+        color: #004D40; /* 絕對深海墨綠字體，確保絕對視覺對比度 (Abyssal Green Text) */
     }
-    hr { border-top: 1px solid #E9ECEF; }
+    .quiz-card:hover {
+        box-shadow: 0 8px 24px rgba(0, 151, 167, 0.25); /* 游標懸停波紋效應 (Hover Ripple Effect) */
+        border-color: #4DD0E1;
+    }
+    hr { border-top: 1px solid #B2EBF2; } /* 淺水波紋分隔線 (Water Ripple Divider) */
     </style>
     """, unsafe_allow_html=True)
 
@@ -429,7 +433,7 @@ def main():
 
     main_options = ["📋 認證考試說明", "🎧 聽力", "🗣️ 口說", "📖 閱讀", "✍️ 寫作"]
     current_tab = st.segmented_control("主選單導覽", main_options, default=None, label_visibility="collapsed")
-
+    
     if "previous_tab" not in st.session_state:
         st.session_state.previous_tab = None
 
