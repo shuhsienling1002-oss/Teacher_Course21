@@ -5,7 +5,7 @@ import os
 import re
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.1.5 (Build 20260727 - Indigenous Style)"
+APP_VERSION = "v2.1.4 (Build 20260727 - Exam Guide Link)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -101,8 +101,7 @@ def load_question_bank():
                 db[current_section].append(q_text)
             current_question.clear()
 
-    for line in target_content.split("
-"):
+    for line in target_content.split("\n"):
         line = line.strip()
         # 遇到空行代表題目結束，存入題庫
         if not line:
@@ -187,9 +186,7 @@ def render_mcq(line, prefix):
         if st.toggle("💡 顯示解答與分析", key=f"t_ans_{prefix}"):
             if ans_str:
                 msg = f"**正確答案：** {ans_str}"
-                if ana_str: msg += f"
-
-**分析：** {ana_str}"
+                if ana_str: msg += f"\n\n**分析：** {ana_str}"
                 st.success(msg)
             else:
                 st.warning("無標準答案。")
@@ -271,9 +268,7 @@ def render_qa(line, prefix):
             if st.toggle("💡 顯示參考解答", key=f"t_{prefix}"):
                 msg = ""
                 if ans: msg += f"參考解答：{ans}"
-                if ana: msg += f"
-
-分析：{ana}"
+                if ana: msg += f"\n\n分析：{ana}"
                 st.success(msg)
     except:
         st.info(line)
@@ -342,9 +337,7 @@ def render_picture(line, prefix):
             if st.toggle("💡 顯示作答參考", key=f"t_{prefix}"):
                 msg = ""
                 if ans: msg += f"作答參考：{ans}"
-                if ana: msg += f"
-
-重點：{ana}"
+                if ana: msg += f"\n\n重點：{ana}"
                 st.success(msg)
     except:
         st.info(line)
@@ -380,9 +373,7 @@ def render_dictation(line, prefix):
             if st.toggle("💡 顯示翻譯與分析", key=f"t_{prefix}"):
                 msg = ""
                 if ch: msg += f"中文：{ch}"
-                if ana: msg += f"
-
-分析：{ana}"
+                if ana: msg += f"\n\n分析：{ana}"
                 st.success(msg)
     except:
         st.info(line)
@@ -413,80 +404,140 @@ def render_section(section_name, db):
 # 🚀 應用程式主邏輯 (Main)
 # ==========================================
 def main():
-    st.set_page_config(page_title="中高級認證", page_icon="🎓", layout="centered", initial_sidebar_state="collapsed")
+    # 設置網頁配置，展開側邊欄以便顯示動物
+    st.set_page_config(page_title="中高級認證", page_icon="🎓", layout="wide", initial_sidebar_state="expanded")
 
-    # 🌺 原住民文化風格佈景主題 CSS (完美適應 Light / Dark 模式)
+    # 沙漠風格 CSS (Desert Rust Style)
     st.markdown("""
     <style>
-    /* 核心原住民風格設計：大地色系、陶紅、琉璃珠綠、織布幾何線條邊框與雙模式適應 */
-    
+    /* Google Fonts - 乾燥、粗糙的字體氛圍 */
+    @import url('https://fonts.googleapis.com/css2?family=Arvo:wght@400;700&family=Special+Elite&display=swap');
+
+    /* 全域背景色 */
+    .stApp {
+        background-color: #F4E1C1; /* 沙色背景 */
+    }
+
+    /* 調整主區塊寬度 */
+    .main .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+        max-width: 1000px;
+    }
+
+    /* 題目卡片 */
     .quiz-card {
+        background-color: #FEF9E7; /* 羊皮紙色背景 */
         padding: 24px;
-        border-radius: 12px;
+        border-radius: 8px; /* 稍微不那麼圓潤，帶點乾燥感 */
+        border: 2px solid #BC9F77; /* 乾燥的粘土色邊框 */
+        box-shadow: 4px 4px 0px rgba(93, 64, 55, 0.15); /* 硬陰影 */
         margin-top: 15px;
         margin-bottom: 25px;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        border-left: 6px solid #C85A32; /* 經典陶紅邊條裝飾 */
-    }
-
-    /* 💡 Light 模式風格 */
-    @media (prefers-color-scheme: light) {
-        .quiz-card {
-            background-color: #FAF6F0; /* 暖米色羊皮紙底 */
-            border: 1px solid #E3D5C6;
-            border-left: 6px solid #C85A32;
-            color: #2C221E;
-        }
-    }
-
-    /* 🌙 Dark 模式風格 */
-    @media (prefers-color-scheme: dark) {
-        .quiz-card {
-            background-color: #1F1B18; /* 深色大地黑灰 */
-            border: 1px solid #3D322C;
-            border-left: 6px solid #E2725B;
-            color: #F4EBE1;
-        }
-    }
-
-    /* Streamlit 自動適應類別相容支援 */
-    [data-theme="light"] .quiz-card {
-        background-color: #FAF6F0;
-        border: 1px solid #E3D5C6;
-        border-left: 6px solid #C85A32;
-        color: #2C221E;
-    }
-
-    [data-theme="dark"] .quiz-card {
-        background-color: #1F1B18;
-        border: 1px solid #3D322C;
-        border-left: 6px solid #E2725B;
-        color: #F4EBE1;
-    }
-
-    /* 標題與裝飾線條優化 */
-    h1, h2, h3 {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        letter-spacing: 0.5px;
-    }
-
-    hr { 
-        border-top: 2px dashed #C85A32; 
-        opacity: 0.4;
-        margin: 25px 0;
+        color: #5D4037; /* 深石褐文字 */
+        font-family: 'Special Elite', cursive; /* 粗糙的字體 */
     }
     
-    /* 按鈕與互動元件微調 */
-    .stButton > button {
-        border-radius: 8px;
-        font-weight: 600;
+    .quiz-card:hover {
+        transform: translate(-2px, -2px);
+        box-shadow: 6px 6px 0px rgba(93, 64, 55, 0.2);
     }
+
+    /* 文字高亮顏色 */
+    .quiz-card strong {
+        color: #E67E22; /* 日落橘高亮 */
+    }
+
+    /* 調整分割線顏色 */
+    hr { border-top: 2px solid #BC9F77; }
+    
+    /* 調整 Radio Button 選項顏色 */
+    div[data-testid="stRadio"] label {
+        color: #5D4037 !important;
+        font-family: 'Special Elite', cursive;
+    }
+
+    /* 按鈕樣式自定義 */
+    .stButton>button {
+        background-color: #E67E22;
+        color: white;
+        border-radius: 4px;
+        border: 1px solid #BA6319;
+        font-family: 'Arvo', serif;
+    }
+
+    /* 成功、錯誤、警告訊息框 */
+    .stAlert {
+        border-radius: 4px;
+        border: 1px solid rgba(0,0,0,0.1);
+        font-family: 'Arvo', serif;
+    }
+
+    /* 動物區塊容器 (側邊欄) */
+    .animal-card {
+        border: 1px solid #BC9F77;
+        border-radius: 8px;
+        background-color: white;
+        padding: 10px;
+        margin-bottom: 20px;
+    }
+
     </style>
     """, unsafe_allow_html=True)
 
-    st.title("🎓 中高級認證")
-    st.caption("[請選擇練習平台]")
+    # ==========================================
+    # 🌵 側邊欄：沙漠動物展示
+    # ==========================================
+    with st.sidebar:
+        st.markdown(f'<p style="font-family:\'Arvo\', serif; font-size:2rem; font-weight:bold; color:#BC9F77; text-align:center;">🌵 沙漠夥伴</p>', unsafe_allow_html=True)
+        st.divider()
+
+        # 動物圖片資料夾路徑
+        animal_img_dir = "assets/images/animals"
+
+        # 動物 1: 駱駝
+        with st.container():
+            st.markdown('<div class="animal-card">', unsafe_allow_html=True)
+            camel_path = os.path.join(animal_img_dir, "camel.jpg")
+            if os.path.exists(camel_path):
+                st.image(camel_path, use_container_width=True)
+            else:
+                st.warning("⚠️ 請上傳 camel.jpg")
+            st.markdown(f'<p style="font-family:\'Arvo\', serif; font-weight:bold; color:#E67E22;">🐪 駱駝 (Camel)</p>', unsafe_allow_html=True)
+            st.caption("沙漠之舟，以其駝峰儲存脂肪，能適應極端的乾旱與高溫。")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # 動物 2: 狐獠
+        with st.container():
+            st.markdown('<div class="animal-card">', unsafe_allow_html=True)
+            meerkat_path = os.path.join(animal_img_dir, "meerkat.jpg")
+            if os.path.exists(meerkat_path):
+                st.image(meerkat_path, use_container_width=True)
+            else:
+                st.warning("⚠️ 請上傳 meerkat.jpg")
+            st.markdown(f'<p style="font-family:\'Arvo\', serif; font-weight:bold; color:#E67E22;">🦊 狐獠 (Meerkat)</p>', unsafe_allow_html=True)
+            st.caption("細尾獴，社會性動物，常以後腿站立警惕，挖掘技巧高超。")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # 動物 3: 角鴞
+        with st.container():
+            st.markdown('<div class="animal-card">', unsafe_allow_html=True)
+            desert_owl_path = os.path.join(animal_img_dir, "desert_owl.jpg")
+            if os.path.exists(desert_owl_path):
+                st.image(desert_owl_path, use_container_width=True)
+            else:
+                st.warning("⚠️ 請上傳 desert_owl.jpg")
+            st.markdown(f'<p style="font-family:\'Arvo\', serif; font-weight:bold; color:#E67E22;">🦉 角鴞 (Desert Owl)</p>', unsafe_allow_html=True)
+            st.caption("沙漠貓頭鷹，具有極佳的偽裝色，是夜間無聲的獵手。")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+
+    # ==========================================
+    # 🏆 主頁面內容
+    # ==========================================
+    st.markdown(f'<p style="font-family:\'Arvo\', serif; font-size:2.5rem; font-weight:bold; color:#5D4037;">🎓 中高級認證</p>', unsafe_allow_html=True)
+    st.markdown(f'<p style="font-family:\'Special Elite\', cursive; color:#A37855;">[請選擇練習平台]</p>', unsafe_allow_html=True)
 
     main_options = ["📋 認證考試說明", "🎧 聽力", "🗣️ 口說", "📖 閱讀", "✍️ 寫作"]
     current_tab = st.segmented_control("主選單導覽", main_options, default=None, label_visibility="collapsed")
@@ -514,8 +565,6 @@ def main():
         listening_sub = st.radio("題型選擇：", ["選擇題-聽音選詞", "選擇題-對話理解"], horizontal=True)
         if listening_sub == "選擇題-聽音選詞":
             render_section("聽音選詞", db)
-        elif listening_sub == "選擇題-對話語言": # 這裡保持原樣
-            render_section("對話理解", db)
         elif listening_sub == "選擇題-對話理解":
             render_section("對話理解", db)
 
