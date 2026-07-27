@@ -5,7 +5,7 @@ import os
 import re
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.1.4 (Build 20260727 - Exam Guide Link Lineage Edition)"
+APP_VERSION = "v2.1.4 (Build 20260727 - Exam Guide Link)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -133,7 +133,7 @@ def load_question_bank():
     return db
 
 # ==========================================
-# 🎨 終極 UI 渲染邏輯 (天堂古典風格)
+# 🎨 終極 UI 渲染邏輯 (物理字串切割，100%保證顯示)
 # ==========================================
 def render_mcq(line, prefix):
     """渲染選擇題 (修復 split 回傳 list 的問題，並新增聽力題目隱藏功能)"""
@@ -309,8 +309,9 @@ def render_picture(line, prefix):
             else:
                 hint = hint_part.strip()
         
-        # 🌟 動態讀取對應圖片邏輯
+        # 🌟 動態讀取對應圖片邏輯 (假設 prefix 格式為 "看圖表達_0")
         try:
+            # 從 prefix 中解析題號 (index + 1)
             idx = int(prefix.split('_')[-1]) + 1
             img_path_jpg = f"assets/images/picture_{idx}.jpg"
             img_path_png = f"assets/images/picture_{idx}.png"
@@ -322,13 +323,14 @@ def render_picture(line, prefix):
             else:
                 st.info(f"🖼️ 圖片佔位區：若要顯示圖片，請將圖片命名為 `picture_{idx}.jpg` 或 `.png`，並放置於 `assets/images/` 資料夾中。")
         except:
-            pass 
+            pass # 若解析題號失敗則安全跳過
 
         st.markdown(f"🖼️ **圖片情境：** {pic}")
         
         if hint:
             st.caption(f"中文提示：{hint}")
             
+        # 加入輸入框作為草稿區
         st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="可以在此輸入您的口說草稿...")
             
         if ans or ana:
@@ -360,8 +362,10 @@ def render_dictation(line, prefix):
             else:
                 ch = text.strip()
         
+        # 加入作答的文字輸入框，模擬真實寫作情境
         st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="請在此輸入您聽寫的句子...")
         
+        # 🌟 寫作測驗專屬：隱藏聽寫原文功能
         if st.toggle("👁️ 顯示聽寫原文", key=f"t_show_dict_{prefix}"):
             st.markdown(f"✍️ **{am}**")
             
@@ -397,113 +401,88 @@ def render_section(section_name, db):
             st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# 🚀 應用程式主邏輯 (Main) - 天堂 (Lineage) 風格化
+# 🚀 應用程式主邏輯 (Main) - 海洋原民風格
 # ==========================================
 def main():
-    st.set_page_config(page_title="中高級認證 - 亞丁王國試煉", page_icon="⚔️", layout="centered", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="中高級認證 - 海洋原民風", page_icon="🌊", layout="centered", initial_sidebar_state="collapsed")
 
-    # ⚔️《天堂 Lineage》經典復古風格 CSS 套件
+    # 🌊 海洋原民風 (Ocean Indigenous Style) CSS 定制
     st.markdown("""
     <style>
-    /* 全域背景：暗黑石磚風 */
+    /* 全域背景色 - 淺海洋漸層 */
     .stApp {
-        background-color: #0d0d0d;
-        background-image: radial-gradient(#1a1a1a 1px, transparent 0);
-        background-size: 16px 16px;
-        color: #d4c391; /* 羊皮紙黃文字 */
-        font-family: "MingLiU", "PMingLiU", "Times New Roman", serif;
+        background: linear-gradient(180deg, #E0F2FE 0%, #F0F9FF 50%, #FFFFFF 100%);
+        color: #0F172A;
     }
 
-    /* 主標題復古羊皮紙/金色邊框風格 */
-    h1 {
-        color: #f3d779 !important;
-        text-shadow: 2px 2px 4px #000000, 0 0 10px #7a5c1e;
-        border-bottom: 2px solid #b8860b;
-        padding-bottom: 8px;
-        font-weight: bold;
+    /* 頂部標題區域與原民波浪紋飾效果 */
+    .ocean-header {
+        background: linear-gradient(135deg, #0284C7 0%, #0369A1 50%, #0F172A 100%);
+        padding: 24px;
+        border-radius: 16px;
+        color: white;
+        text-align: center;
+        box-shadow: 0 10px 25px -5px rgba(3, 105, 161, 0.3);
+        border-bottom: 5px solid #F97316; /* 暖橘色原民編織裝飾線 */
+        margin-bottom: 20px;
     }
 
-    h2, h3, h4 {
-        color: #e2b041 !important;
-        text-shadow: 1px 1px 2px #000000;
-    }
-
-    /* 天堂卡片視窗：羊皮紙與金屬框線 */
+    /* 題目卡片風格：海洋深藍邊框與高質感陰影 */
     .quiz-card {
-        background: linear-gradient(180deg, #1f1b18 0%, #141210 100%);
-        padding: 22px;
-        border-radius: 4px;
-        border: 2px solid #5a4726;
-        box-shadow: inset 0 0 10px #000000, 0 4px 12px rgba(0, 0, 0, 0.8);
-        margin-top: 15px;
-        margin-bottom: 25px;
-        color: #e0d0b0;
-        position: relative;
-    }
-
-    /* 經典 HP/MP 血條分割線風格 */
-    hr {
-        border: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #8b0000 0%, #d21414 50%, #00008b 50%, #1e90ff 100%);
-        margin: 15px 0;
-        box-shadow: 0 0 4px #000;
-    }
-
-    /* Streamlit 分段選擇器與按鈕的天堂化修正 */
-    div[data-baseweb="segmented-control"] {
-        background-color: #1a1714 !important;
-        border: 1px solid #7a5c1e !important;
-        padding: 4px !important;
-        border-radius: 4px !important;
-    }
-
-    button[role="tab"] {
-        color: #c0b090 !important;
-        font-weight: bold !important;
-    }
-
-    button[role="tab"][aria-selected="true"] {
-        background-color: #4a3818 !important;
-        color: #ffe082 !important;
-        border: 1px solid #c29b38 !important;
-    }
-
-    /* 輸入框與文字區域：黑底金邊 */
-    stTextArea textarea, stTextInput input {
-        background-color: #0a0908 !important;
-        color: #f0e0c0 !important;
-        border: 1px solid #6b5328 !important;
-        border-radius: 2px !important;
+        background-color: #FFFFFF;
+        padding: 26px;
+        border-radius: 16px;
+        border-left: 6px solid #0284C7;
+        border-right: 1px solid #E2E8F0;
+        border-top: 1px solid #E2E8F0;
+        border-bottom: 1px solid #E2E8F0;
+        box-shadow: 0 8px 20px rgba(2, 132, 199, 0.08);
+        margin-top: 18px;
+        margin-bottom: 24px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     
-    /* Toggle 切換鍵風格 */
-    div[data-testid="stToggle"] {
-        color: #d4c391 !important;
+    .quiz-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px rgba(2, 132, 199, 0.12);
     }
 
-    /* 提示訊息欄位天堂試煉化 */
-    div.stAlert {
-        background-color: #1c1813 !important;
-        border: 1px solid #a37c27 !important;
-        color: #e6d3a7 !important;
+    /* 原民編織分隔線 */
+    hr {
+        border: 0;
+        height: 2px;
+        background: linear-gradient(90deg, rgba(2,132,199,0) 0%, rgba(2,132,199,0.8) 50%, rgba(2,132,199,0) 100%);
+        margin: 25px 0;
     }
 
-    /* 超連結金光發亮效果 */
-    a {
-        color: #ffcc00 !important;
-        text-decoration: none !important;
+    /* 按鈕與表單原民色彩優化 */
+    div.stButton > button {
+        background-color: #0284C7;
+        color: white;
+        border-radius: 8px;
+        border: none;
         font-weight: bold;
     }
-    a:hover {
-        color: #ffffff !important;
-        text-shadow: 0 0 8px #ffcc00;
+
+    div.stButton > button:hover {
+        background-color: #0369A1;
+        color: #F0F9FF;
+    }
+
+    /* Toggle 狀態卡片樣式修正 */
+    .stToggle {
+        color: #0369A1;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    st.title("⚔️ 中高級認證 - 亞丁試煉場")
-    st.caption("🛡️ [請選擇試煉領域]")
+    # 🌊 海洋風格 Title Header
+    st.markdown("""
+    <div class="ocean-header">
+        <h1 style="margin:0; font-size: 2.2rem; font-weight: 800;">🌊 族語中高級認證學習平台</h1>
+        <p style="margin-top:8px; font-size: 1rem; opacity: 0.9;">Pilicay to kamaro' - 悠遊海洋．傳承原音</p>
+    </div>
+    """, unsafe_allow_html=True)
 
     main_options = ["📋 認證考試說明", "🎧 聽力", "🗣️ 口說", "📖 閱讀", "✍️ 寫作"]
     current_tab = st.segmented_control("主選單導覽", main_options, default=None, label_visibility="collapsed")
@@ -521,13 +500,12 @@ def main():
     db = load_question_bank()
 
     if current_tab == "📋 認證考試說明":
-        # 🌟 超連結保持完整保留
-        st.subheader("📜 [認證考試說明(開啟古老羊皮紙)](https://lokahsu.ilrdf.org.tw/web_lokahsu/Files/Guide/1_20251211_162558.pdf)")
+        st.subheader("📋 [認證考試說明](https://lokahsu.ilrdf.org.tw/web_lokahsu/Files/Guide/1_20251211_162558.pdf)")
         st.divider()
-        st.info("請透過上方試煉選單選擇您要進行的挑戰項目。系統將自動從羊皮紙典籍中載入完整題庫。")
+        st.info("🌊 歡迎使用海洋原民風格模考系統！請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫。")
 
     elif current_tab == "🎧 聽力":
-        st.subheader("🎧 聽力試煉 (pitengil)")
+        st.subheader("🎧 聽力測驗 (pitengil)")
         st.divider()
         listening_sub = st.radio("題型選擇：", ["選擇題-聽音選詞", "選擇題-對話理解"], horizontal=True)
         if listening_sub == "選擇題-聽音選詞":
@@ -536,7 +514,7 @@ def main():
             render_section("對話理解", db)
 
     elif current_tab == "🗣️ 口說":
-        st.subheader("🗣️ 口說試煉 (pisowal)")
+        st.subheader("🗣️ 口說測驗 (pisowal)")
         st.divider()
         speaking_sub = st.radio("題型選擇：", ["段落朗讀", "情境問答", "看圖表達"], horizontal=True)
         if speaking_sub == "段落朗讀":
@@ -547,7 +525,7 @@ def main():
             render_section("看圖表達", db)
 
     elif current_tab == "📖 閱讀":
-        st.subheader("📖 閱讀試煉 (piasip)")
+        st.subheader("📖 閱讀測驗 (piasip)")
         st.divider()
         reading_sub = st.radio("閱讀題型選擇：", ["選擇題-詞彙語意", "選擇題-語言結構"], horizontal=True)
         if reading_sub == "選擇題-詞彙語意":
@@ -556,7 +534,7 @@ def main():
             render_section("語言結構", db)
 
     elif current_tab == "✍️ 寫作":
-        st.subheader("✍️ 寫作試煉 (pitilid)")
+        st.subheader("✍️ 寫作測驗 (pitilid)")
         st.divider()
         writing_sub = st.radio("寫作題型選擇：", ["句子聽寫", "問答"], horizontal=True)
         if writing_sub == "句子聽寫":
@@ -565,7 +543,7 @@ def main():
             render_section("問答", db)
 
     st.write("---")
-    st.caption(f"© 2026 中高級認證 App 三一騎士團 ｜ 核心版本： **{APP_VERSION}** ")
+    st.caption(f"🌊 © 2026 中高級認證 App 三一開發團隊 ｜ 海洋原民主題版 ｜ 系統版本： **{APP_VERSION}** ")
 
 if __name__ == "__main__":
     main()
