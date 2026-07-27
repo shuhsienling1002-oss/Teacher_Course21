@@ -5,7 +5,7 @@ import os
 import re
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.1.4 (Build 20260727 - Exam Guide Link)"
+APP_VERSION = "v2.2.1 (CODE VAJRA - Visual Decoupling Matrix)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -131,16 +131,15 @@ def load_question_bank():
     return db
 
 # ==========================================
-# 🎨 終極 UI 渲染邏輯 (物理字串切割，100%保證顯示)
+# 🎨 終極 UI 渲染邏輯 (強制視覺分離問與答)
 # ==========================================
 def render_mcq(line, prefix):
-    """渲染選擇題 (修復 split 回傳 list 的問題，並新增聽力題目隱藏功能)"""
+    """渲染選擇題：強制題幹與選項分層"""
     try:
         if "(A)" not in line:
             st.info(line)
             return
 
-        # 限制分割次數，並明確取值
         parts = line.split("(A)", 1)
         q_part = parts.strip()
         rest = "(A)" + parts
@@ -160,15 +159,13 @@ def render_mcq(line, prefix):
             else:
                 ans_str = ans_ana.strip("。 ")
 
-        # 🌟 聽力測驗專屬：隱藏題目文字功能
         is_listening = "聽音選詞" in prefix or "對話理解" in prefix
         if is_listening:
             if st.toggle("👁️ 顯示題目文字", key=f"t_show_q_{prefix}"):
-                st.markdown(f"**{q_part}**")
+                st.markdown(f"**【題目】** {q_part}")
         else:
-            st.markdown(f"**{q_part}**")
+            st.markdown(f"**【題目】** {q_part}")
 
-        # 安全切割四個選項
         opts = []
         for tag in ["(A)", "(B)", "(C)", "(D)"]:
             if tag in opts_str:
@@ -178,20 +175,22 @@ def render_mcq(line, prefix):
                         opt_text = opt_text.split(next_tag, 1)
                 opts.append(tag + " " + opt_text.strip())
 
-        user_ans = st.radio("請選擇：", opts, index=None, key=prefix)
+        st.markdown("<br>", unsafe_allow_html=True)
+        user_ans = st.radio("👉 **請選擇您的答案：**", opts, index=None, key=prefix)
 
-        if st.toggle("💡 顯示解答與分析", key=f"t_ans_{prefix}"):
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.toggle("✅ 顯示解答與分析", key=f"t_ans_{prefix}"):
             if ans_str:
-                msg = f"**正確答案：** {ans_str}"
-                if ana_str: msg += f"\n\n**分析：** {ana_str}"
+                msg = f"**【正確答案】** {ans_str}"
+                if ana_str: msg += f"\n\n**【分析】** {ana_str}"
                 st.success(msg)
             else:
                 st.warning("無標準答案。")
         elif user_ans and ans_str:
             if ans_str in user_ans:
-                st.success(f"✅ 正確！" + (f"分析：{ana_str}" if ana_str else ""))
+                st.success(f"🎉 正確！" + (f"\n\n**【分析】** {ana_str}" if ana_str else ""))
             else:
-                st.error(f"❌ 錯誤。正確答案：{ans_str}。" + (f"分析：{ana_str}" if ana_str else ""))
+                st.error(f"❌ 錯誤。**【正確答案】** {ans_str}。" + (f"\n\n**【分析】** {ana_str}" if ana_str else ""))
     except Exception as e:
         st.info(line)
 
@@ -209,15 +208,16 @@ def render_reading(line, prefix):
             q_part = parts.strip()
             ch_part = parts.strip(")")
 
-        st.markdown(f"📖 **{q_part}**")
+        st.markdown(f"📖 **【段落】** {q_part}")
+        st.markdown("<br>", unsafe_allow_html=True)
         if ch_part:
-            if st.toggle("💡 顯示中文翻譯", key=f"t_{prefix}"):
-                st.success(ch_part)
+            if st.toggle("✅ 顯示中文翻譯", key=f"t_{prefix}"):
+                st.success(f"**【中文】** {ch_part}")
     except:
         st.info(line)
 
 def render_qa(line, prefix):
-    """渲染問答與情境問答"""
+    """渲染問答與情境問答：強制隔離並加入專屬作答區塊"""
     try:
         text = line
         q_am = text
@@ -247,31 +247,37 @@ def render_qa(line, prefix):
             if not ans:
                 ans = text.strip()
                 
-        q_am = q_am.replace("題目：", " 題目：")
+        # 移除非必要的題目字眼
+        q_am = re.sub(r'^\d+[\.、]\s*題目：', '', q_am)
+        q_am = re.sub(r'^\d+[\.、]\s*', '', q_am).strip()
 
-        # 🌟 口說測驗-情境問答專屬：隱藏題目與提示功能
         is_situational = "情境問答" in prefix
         if is_situational:
             if st.toggle("👁️ 顯示題目與提示", key=f"t_show_q_{prefix}"):
-                st.markdown(f"🗣️ **{q_am}**")
+                st.markdown(f"🗣️ **【題目】** {q_am}")
                 if ch_hint:
-                    st.caption(f"中文提示：{ch_hint}")
+                    st.caption(f"💡 **【中文提示】** {ch_hint}")
         else:
-            st.markdown(f"🗣️ **{q_am}**")
+            st.markdown(f"🗣️ **【題目】** {q_am}")
             if ch_hint:
-                st.caption(f"中文提示：{ch_hint}")
+                st.caption(f"💡 **【中文提示】** {ch_hint}")
 
+        # 🌟 強制加入：使用者的作答緩衝區 (分離題目與答案)
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.text_area("✍️ **請在此輸入您的回答：**", key=f"input_{prefix}", placeholder="請在此作答...")
+
+        st.markdown("<br>", unsafe_allow_html=True)
         if ans or ana:
-            if st.toggle("💡 顯示參考解答", key=f"t_{prefix}"):
+            if st.toggle("✅ 顯示參考解答", key=f"t_{prefix}"):
                 msg = ""
-                if ans: msg += f"參考解答：{ans}"
-                if ana: msg += f"\n\n分析：{ana}"
+                if ans: msg += f"**【參考解答】** {ans}"
+                if ana: msg += f"\n\n**【分析】** {ana}"
                 st.success(msg)
     except:
         st.info(line)
 
 def render_picture(line, prefix):
-    """渲染看圖表達，並支援動態載入對應題號圖片"""
+    """渲染看圖表達：強制隔離並加入專屬作答區塊"""
     try:
         text = line
         pic = text
@@ -304,9 +310,7 @@ def render_picture(line, prefix):
             else:
                 hint = hint_part.strip()
 
-        # 🌟 動態讀取對應圖片邏輯
         try:
-            # 從 prefix 中解析題號 (index + 1)
             idx = int(prefix.split('_')[-1]) + 1
             img_path_jpg = f"assets/images/picture_{idx}.jpg"
             img_path_png = f"assets/images/picture_{idx}.png"
@@ -317,26 +321,28 @@ def render_picture(line, prefix):
             else:
                 st.info(f"🖼️ 圖片佔位區：若要顯示圖片，請將圖片命名為 `picture_{idx}.jpg` 或 `.png`，並放置於 `assets/images/` 資料夾中。")
         except:
-            pass # 若解析題號失敗則安全跳過
+            pass 
             
-        st.markdown(f"🖼️ **圖片情境：** {pic}")
+        st.markdown(f"🖼️ **【圖片情境】** {pic}")
         if hint:
-            st.caption(f"中文提示：{hint}")
+            st.caption(f"💡 **【中文提示】** {hint}")
 
-        # 加入輸入框作為草稿區
-        st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="可以在此輸入您的口說草稿...")
+        # 🌟 強制加入：使用者的作答緩衝區
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.text_area("✍️ **請在此作答：**", key=f"input_{prefix}", placeholder="可以在此輸入您的口說草稿...")
         
+        st.markdown("<br>", unsafe_allow_html=True)
         if ans or ana:
-            if st.toggle("💡 顯示作答參考", key=f"t_{prefix}"):
+            if st.toggle("✅ 顯示作答參考", key=f"t_{prefix}"):
                 msg = ""
-                if ans: msg += f"作答參考：{ans}"
-                if ana: msg += f"\n\n重點：{ana}"
+                if ans: msg += f"**【作答參考】** {ans}"
+                if ana: msg += f"\n\n**【重點】** {ana}"
                 st.success(msg)
     except:
         st.info(line)
 
 def render_dictation(line, prefix):
-    """渲染句子聽寫"""
+    """渲染句子聽寫：強制隔離並加入專屬作答區塊"""
     try:
         text = line
         am = text
@@ -354,18 +360,19 @@ def render_dictation(line, prefix):
             else:
                 ch = text.strip()
 
-        # 加入作答的文字輸入框，模擬真實寫作情境
-        st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="請在此輸入您聽寫的句子...")
+        # 🌟 強制加入：使用者的作答緩衝區
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.text_area("✍️ **請在此作答：**", key=f"input_{prefix}", placeholder="請在此輸入您聽寫的句子...")
         
-        # 🌟 寫作測驗專屬：隱藏聽寫原文功能
+        st.markdown("<br>", unsafe_allow_html=True)
         if st.toggle("👁️ 顯示聽寫原文", key=f"t_show_dict_{prefix}"):
-            st.markdown(f"✍️ **{am}**")
+            st.markdown(f"**【原文】** {am}")
             
         if ch or ana:
-            if st.toggle("💡 顯示翻譯與分析", key=f"t_{prefix}"):
+            if st.toggle("✅ 顯示翻譯與分析", key=f"t_{prefix}"):
                 msg = ""
-                if ch: msg += f"中文：{ch}"
-                if ana: msg += f"\n\n分析：{ana}"
+                if ch: msg += f"**【中文】** {ch}"
+                if ana: msg += f"\n\n**【分析】** {ana}"
                 st.success(msg)
     except:
         st.info(line)
@@ -427,6 +434,13 @@ def main():
     }
     h1, h2, h3 {
         color: #B71C1C !important;
+    }
+    /* 調整 text_area 以符合民族風 */
+    .stTextArea textarea {
+        background-color: #FAFAFA;
+        border: 1px solid #D7CCC8;
+        border-radius: 4px;
+        color: #3E2723;
     }
     </style>
     """, unsafe_allow_html=True)
