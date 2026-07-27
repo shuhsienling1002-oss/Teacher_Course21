@@ -1,7 +1,7 @@
 import streamlit as st
 import random
 import json
-import os
+import os  # 引入 OS 模組，用於物理檔案路徑防禦性偵測
 
 # 🚀 全域系統版本號
 APP_VERSION = "v2.0.0 (Build 20260619)"
@@ -12,13 +12,22 @@ APP_VERSION = "v2.0.0 (Build 20260619)"
 VOCABULARY = []
 SENTENCES = []
 
-def init_quiz(): pass
-def play_audio(): pass
-def show_learning_mode(): pass
-def show_quiz_mode(): pass
-def show_debug_info(): pass
+def init_quiz(): 
+    pass
 
-# 原始聽力題庫 (完全保留 15 題標準數據庫)
+def play_audio(): 
+    pass
+
+def show_learning_mode(): 
+    pass
+
+def show_quiz_mode(): 
+    pass
+
+def show_debug_info(): 
+    pass
+
+# 原始聽力題庫 (15題標準數據庫)
 QUIZ_DATA = [
     {"id": 1, "audio_path": "assets/audio/01_listening/listening_words/tengil-a1-01.mp3", "question_text": "聆聽音檔，選出關聯的詞彙：", "options": ["riyar", "'alo", "fanaw", "sa'owac"], "correct_text": "riyar"},
     {"id": 2, "audio_path": "assets/audio/01_listening/listening_words/tengil-a1-02.mp3", "question_text": "聆聽音檔，選出關聯的詞彙：", "options": ["korkor", "rohayan", "romakat", "rotarot"], "correct_text": "romakat"},
@@ -42,15 +51,22 @@ QUIZ_DATA = [
 # ==========================================
 @st.cache_data
 def load_question_bank(filepath="各類題目.txt"):
+    # 🌟 關鍵修正：動態取得 app.py 當前所在的資料夾絕對路徑
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    actual_filepath = os.path.join(base_dir, filepath)
+
     db = {
         "聽音選詞": [], "對話理解": [], "段落朗讀": [], "情境問答": [],
         "看圖表達": [], "詞彙語意": [], "語言結構": [], "句子聽寫": [], "問答": []
     }
-    if not os.path.exists(filepath):
+    
+    # 🌟 改用 actual_filepath 進行防禦性偵測
+    if not os.path.exists(actual_filepath):
         return db
 
     current_section = None
-    with open(filepath, "r", encoding="utf-8") as f:
+    # 🌟 改用 actual_filepath 開啟檔案
+    with open(actual_filepath, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line: continue
@@ -82,6 +98,7 @@ def render_mcq(line, prefix):
         ana_part = line.split("分析：") if "分析：" in line else "無"
 
         st.markdown(f"**{q_part.strip()}**")
+        
         o_a = "(A)" + opts_str.split("(B)")
         o_b = "(B)" + opts_str.split("(B)").split("(C)")
         o_c = "(C)" + opts_str.split("(C)").split("(D)")
@@ -95,7 +112,7 @@ def render_mcq(line, prefix):
             else:
                 st.error(f"❌ 錯誤。正確答案：{ans_part}。分析：{ana_part}")
     except:
-        st.info(line) # 若格式特殊，退回顯示原文字
+        st.info(line) 
 
 def render_reading(line, prefix):
     """渲染段落朗讀"""
