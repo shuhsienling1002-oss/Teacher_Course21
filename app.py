@@ -5,7 +5,7 @@ import os
 import re
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.1.4 (Build 20260727 - Exam Guide Link) - Sidebar Layout"
+APP_VERSION = "v2.1.4 (Build 20260727 - Exam Guide Link Lineage Edition)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -90,6 +90,7 @@ def load_question_bank():
     if not file_loaded:
         return db
 
+    # 使用緩衝區將跨行的題目合併為單一字串
     current_section = None
     current_question = []
 
@@ -102,10 +103,12 @@ def load_question_bank():
 
     for line in target_content.split("\n"):
         line = line.strip()
+        # 遇到空行代表題目結束，存入題庫
         if not line:
             save_question()
             continue
             
+        # 判斷是否為題型切換標題
         if "一、選擇題（聽音選詞）" in line: save_question(); current_section = "聽音選詞"
         elif "二、選擇題（對話理解）" in line: save_question(); current_section = "對話理解"
         elif "三、段落朗讀" in line: save_question(); current_section = "段落朗讀"
@@ -116,25 +119,30 @@ def load_question_bank():
         elif "八、句子聽寫" in line: save_question(); current_section = "句子聽寫"
         elif "九、問答" in line: save_question(); current_section = "問答"
         
+        # 開頭為數字代表新題目的開始
         elif re.match(r'^\d+[\.、]', line):
             save_question()
             current_question.append(line)
+        # 屬於目前題目的後續內容（選項或答案）
         else:
             if current_question:
                 current_question.append(line)
                 
-    save_question()
+    save_question() # 儲存最後一題
+            
     return db
 
 # ==========================================
-# 🎨 終極 UI 渲染邏輯
+# 🎨 終極 UI 渲染邏輯 (天堂古典風格)
 # ==========================================
 def render_mcq(line, prefix):
+    """渲染選擇題 (修復 split 回傳 list 的問題，並新增聽力題目隱藏功能)"""
     try:
         if "(A)" not in line:
             st.info(line)
             return
 
+        # 限制分割次數，並明確取值
         parts = line.split("(A)", 1)
         q_part = parts[0].strip()
         rest = "(A)" + parts[1]
@@ -155,6 +163,7 @@ def render_mcq(line, prefix):
             else:
                 ans_str = ans_ana.strip("。 ")
 
+        # 🌟 聽力測驗專屬：隱藏題目文字功能
         is_listening = "聽音選詞" in prefix or "對話理解" in prefix
         if is_listening:
             if st.toggle("👁️ 顯示題目文字", key=f"t_show_q_{prefix}"):
@@ -162,6 +171,7 @@ def render_mcq(line, prefix):
         else:
             st.markdown(f"**{q_part}**")
         
+        # 安全切割四個選項
         opts = []
         for tag in ["(A)", "(B)", "(C)", "(D)"]:
             if tag in opts_str:
@@ -189,6 +199,7 @@ def render_mcq(line, prefix):
         st.info(line) 
 
 def render_reading(line, prefix):
+    """渲染段落朗讀"""
     try:
         q_part = line
         ch_part = ""
@@ -209,6 +220,7 @@ def render_reading(line, prefix):
         st.info(line)
 
 def render_qa(line, prefix):
+    """渲染問答與情境問答"""
     try:
         text = line
         q_am = text
@@ -240,6 +252,7 @@ def render_qa(line, prefix):
         
         q_am = q_am.replace("題目：", " 題目：")
         
+        # 🌟 口說測驗-情境問答專屬：隱藏題目與提示功能
         is_situational = "情境問答" in prefix
         if is_situational:
             if st.toggle("👁️ 顯示題目與提示", key=f"t_show_q_{prefix}"):
@@ -261,6 +274,7 @@ def render_qa(line, prefix):
         st.info(line)
 
 def render_picture(line, prefix):
+    """渲染看圖表達，並支援動態載入對應題號圖片"""
     try:
         text = line
         pic = text
@@ -295,6 +309,7 @@ def render_picture(line, prefix):
             else:
                 hint = hint_part.strip()
         
+        # 🌟 動態讀取對應圖片邏輯
         try:
             idx = int(prefix.split('_')[-1]) + 1
             img_path_jpg = f"assets/images/picture_{idx}.jpg"
@@ -307,7 +322,7 @@ def render_picture(line, prefix):
             else:
                 st.info(f"🖼️ 圖片佔位區：若要顯示圖片，請將圖片命名為 `picture_{idx}.jpg` 或 `.png`，並放置於 `assets/images/` 資料夾中。")
         except:
-            pass
+            pass 
 
         st.markdown(f"🖼️ **圖片情境：** {pic}")
         
@@ -326,6 +341,7 @@ def render_picture(line, prefix):
         st.info(line)
 
 def render_dictation(line, prefix):
+    """渲染句子聽寫"""
     try:
         text = line
         am = text
@@ -359,6 +375,7 @@ def render_dictation(line, prefix):
         st.info(line)
 
 def render_section(section_name, db):
+    """通用區塊渲染器"""
     questions = db.get(section_name, [])
     if not questions:
         st.warning(f"⚠️ 系統抓不到【{section_name}】的資料。")
@@ -380,129 +397,175 @@ def render_section(section_name, db):
             st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# 🚀 應用程式主邏輯 (Main) - 側邊欄版面
+# 🚀 應用程式主邏輯 (Main) - 天堂 (Lineage) 風格化
 # ==========================================
 def main():
-    st.set_page_config(page_title="中高級認證學習平台", page_icon="🎓", layout="wide", initial_sidebar_state="expanded")
+    st.set_page_config(page_title="中高級認證 - 亞丁王國試煉", page_icon="⚔️", layout="centered", initial_sidebar_state="collapsed")
 
-    # 卡片與側邊欄專屬 CSS 樣式
+    # ⚔️《天堂 Lineage》經典復古風格 CSS 套件
     st.markdown("""
     <style>
+    /* 全域背景：暗黑石磚風 */
     .stApp {
-        background-color: #F4F6F9;
+        background-color: #0d0d0d;
+        background-image: radial-gradient(#1a1a1a 1px, transparent 0);
+        background-size: 16px 16px;
+        color: #d4c391; /* 羊皮紙黃文字 */
+        font-family: "MingLiU", "PMingLiU", "Times New Roman", serif;
     }
+
+    /* 主標題復古羊皮紙/金色邊框風格 */
+    h1 {
+        color: #f3d779 !important;
+        text-shadow: 2px 2px 4px #000000, 0 0 10px #7a5c1e;
+        border-bottom: 2px solid #b8860b;
+        padding-bottom: 8px;
+        font-weight: bold;
+    }
+
+    h2, h3, h4 {
+        color: #e2b041 !important;
+        text-shadow: 1px 1px 2px #000000;
+    }
+
+    /* 天堂卡片視窗：羊皮紙與金屬框線 */
     .quiz-card {
-        background-color: #FFFFFF;
-        padding: 24px;
-        border-radius: 12px;
-        border-left: 6px solid #1E88E5;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        background: linear-gradient(180deg, #1f1b18 0%, #141210 100%);
+        padding: 22px;
+        border-radius: 4px;
+        border: 2px solid #5a4726;
+        box-shadow: inset 0 0 10px #000000, 0 4px 12px rgba(0, 0, 0, 0.8);
         margin-top: 15px;
         margin-bottom: 25px;
-        transition: all 0.3s ease;
-        color: #2C3E50;
+        color: #e0d0b0;
+        position: relative;
     }
-    .quiz-card:hover {
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+
+    /* 經典 HP/MP 血條分割線風格 */
+    hr {
+        border: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #8b0000 0%, #d21414 50%, #00008b 50%, #1e90ff 100%);
+        margin: 15px 0;
+        box-shadow: 0 0 4px #000;
     }
-    .sidebar-header {
-        font-size: 20px;
+
+    /* Streamlit 分段選擇器與按鈕的天堂化修正 */
+    div[data-baseweb="segmented-control"] {
+        background-color: #1a1714 !important;
+        border: 1px solid #7a5c1e !important;
+        padding: 4px !important;
+        border-radius: 4px !important;
+    }
+
+    button[role="tab"] {
+        color: #c0b090 !important;
+        font-weight: bold !important;
+    }
+
+    button[role="tab"][aria-selected="true"] {
+        background-color: #4a3818 !important;
+        color: #ffe082 !important;
+        border: 1px solid #c29b38 !important;
+    }
+
+    /* 輸入框與文字區域：黑底金邊 */
+    stTextArea textarea, stTextInput input {
+        background-color: #0a0908 !important;
+        color: #f0e0c0 !important;
+        border: 1px solid #6b5328 !important;
+        border-radius: 2px !important;
+    }
+    
+    /* Toggle 切換鍵風格 */
+    div[data-testid="stToggle"] {
+        color: #d4c391 !important;
+    }
+
+    /* 提示訊息欄位天堂試煉化 */
+    div.stAlert {
+        background-color: #1c1813 !important;
+        border: 1px solid #a37c27 !important;
+        color: #e6d3a7 !important;
+    }
+
+    /* 超連結金光發亮效果 */
+    a {
+        color: #ffcc00 !important;
+        text-decoration: none !important;
         font-weight: bold;
-        color: #1E88E5;
-        margin-bottom: 10px;
+    }
+    a:hover {
+        color: #ffffff !important;
+        text-shadow: 0 0 8px #ffcc00;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    db = load_question_bank()
+    st.title("⚔️ 中高級認證 - 亞丁試煉場")
+    st.caption("🛡️ [請選擇試煉領域]")
 
-    # 側邊欄設計
-    with st.sidebar:
-        st.title("🎓 認證學習平台")
-        st.caption("中高級族語認證測驗系統")
-        st.divider()
+    main_options = ["📋 認證考試說明", "🎧 聽力", "🗣️ 口說", "📖 閱讀", "✍️ 寫作"]
+    current_tab = st.segmented_control("主選單導覽", main_options, default=None, label_visibility="collapsed")
 
-        main_category = st.radio(
-            "📌 選擇測驗類別",
-            ["📋 認證考試說明", "🎧 聽力測驗", "🗣️ 口說測驗", "📖 閱讀測驗", "✍️ 寫作測驗"]
-        )
+    if "previous_tab" not in st.session_state:
+        st.session_state.previous_tab = None
 
-        sub_category = None
-        if main_category == "🎧 聽力測驗":
-            st.divider()
-            sub_category = st.selectbox("選擇聽力題型：", ["選擇題-聽音選詞", "選擇題-對話理解"])
-        elif main_category == "🗣️ 口說測驗":
-            st.divider()
-            sub_category = st.selectbox("選擇口說題型：", ["段落朗讀", "情境問答", "看圖表達"])
-        elif main_category == "📖 閱讀測驗":
-            st.divider()
-            sub_category = st.selectbox("選擇閱讀題型：", ["選擇題-詞彙語意", "選擇題-語言結構"])
-        elif main_category == "✍️ 寫作測驗":
-            st.divider()
-            sub_category = st.selectbox("選擇寫作題型：", ["句子聽寫", "問答"])
-
-        st.divider()
-        st.caption(f"系統版本：**{APP_VERSION}**")
-
-    # Session State 頁面切換控制
-    current_key = f"{main_category}_{sub_category}"
-    if "previous_key" not in st.session_state:
-        st.session_state.previous_key = None
-
-    if st.session_state.previous_key != current_key:
+    if st.session_state.previous_tab != current_tab:
         st.session_state.submitted = False
         st.session_state.audio_triggered = False
         if "writing_submitted" in st.session_state:
             st.session_state.writing_submitted = False
-        st.session_state.previous_key = current_key
+        st.session_state.previous_tab = current_tab
 
-    # 中央內容區域
-    if main_category == "📋 認證考試說明":
-        st.title("📋 認證考試說明")
-        st.subheader("🎓 [點此查看完整考試說明文件 PDF](https://lokahsu.ilrdf.org.tw/web_lokahsu/Files/Guide/1_20251211_162558.pdf)")
-        st.divider()
-        st.info("👈 請從左側選單選擇您要練習的測驗類別與題型。系統將自動為您載入對應題庫。")
+    db = load_question_bank()
 
-    elif main_category == "🎧 聽力測驗":
-        st.title("🎧 聽力測驗 (pitengil)")
-        st.caption(f"當前模式：{sub_category}")
+    if current_tab == "📋 認證考試說明":
+        # 🌟 超連結保持完整保留
+        st.subheader("📜 [認證考試說明(開啟古老羊皮紙)](https://lokahsu.ilrdf.org.tw/web_lokahsu/Files/Guide/1_20251211_162558.pdf)")
         st.divider()
-        if sub_category == "選擇題-聽音選詞":
+        st.info("請透過上方試煉選單選擇您要進行的挑戰項目。系統將自動從羊皮紙典籍中載入完整題庫。")
+
+    elif current_tab == "🎧 聽力":
+        st.subheader("🎧 聽力試煉 (pitengil)")
+        st.divider()
+        listening_sub = st.radio("題型選擇：", ["選擇題-聽音選詞", "選擇題-對話理解"], horizontal=True)
+        if listening_sub == "選擇題-聽音選詞":
             render_section("聽音選詞", db)
-        elif sub_category == "選擇題-對話理解":
+        elif listening_sub == "選擇題-對話理解":
             render_section("對話理解", db)
 
-    elif main_category == "🗣️ 口說測驗":
-        st.title("🗣️ 口說測驗 (pisowal)")
-        st.caption(f"當前模式：{sub_category}")
+    elif current_tab == "🗣️ 口說":
+        st.subheader("🗣️ 口說試煉 (pisowal)")
         st.divider()
-        if sub_category == "段落朗讀":
+        speaking_sub = st.radio("題型選擇：", ["段落朗讀", "情境問答", "看圖表達"], horizontal=True)
+        if speaking_sub == "段落朗讀":
             render_section("段落朗讀", db)
-        elif sub_category == "情境問答":
+        elif speaking_sub == "情境問答":
             render_section("情境問答", db)
-        elif sub_category == "看圖表達":
+        elif speaking_sub == "看圖表達":
             render_section("看圖表達", db)
 
-    elif main_category == "📖 閱讀測驗":
-        st.title("📖 閱讀測驗 (piasip)")
-        st.caption(f"當前模式：{sub_category}")
+    elif current_tab == "📖 閱讀":
+        st.subheader("📖 閱讀試煉 (piasip)")
         st.divider()
-        if sub_category == "選擇題-詞彙語意":
+        reading_sub = st.radio("閱讀題型選擇：", ["選擇題-詞彙語意", "選擇題-語言結構"], horizontal=True)
+        if reading_sub == "選擇題-詞彙語意":
             render_section("詞彙語意", db)
-        elif sub_category == "選擇題-語言結構":
+        elif reading_sub == "選擇題-語言結構":
             render_section("語言結構", db)
 
-    elif main_category == "✍️ 寫作測驗":
-        st.title("✍️ 寫作測驗 (pitilid)")
-        st.caption(f"當前模式：{sub_category}")
+    elif current_tab == "✍️ 寫作":
+        st.subheader("✍️ 寫作試煉 (pitilid)")
         st.divider()
-        if sub_category == "句子聽寫":
+        writing_sub = st.radio("寫作題型選擇：", ["句子聽寫", "問答"], horizontal=True)
+        if writing_sub == "句子聽寫":
             render_section("句子聽寫", db)
-        elif sub_category == "問答":
+        elif writing_sub == "問答":
             render_section("問答", db)
 
     st.write("---")
-    st.caption(f"© 2026 中高級認證 App 三一開發團隊 ｜ 系統版本： **{APP_VERSION}**")
+    st.caption(f"© 2026 中高級認證 App 三一騎士團 ｜ 核心版本： **{APP_VERSION}** ")
 
 if __name__ == "__main__":
     main()
