@@ -5,7 +5,7 @@ import os
 import re
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.1.4 (Build 20260727 - Sky & Cloud Theme)"
+APP_VERSION = "v2.1.4 (Build 20260727 - Exam Guide Link)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -404,80 +404,111 @@ def render_section(section_name, db):
 # 🚀 應用程式主邏輯 (Main)
 # ==========================================
 def main():
-    st.set_page_config(page_title="中高級認證", page_icon="☁️", layout="centered", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="中高級認證 - 鄉村部落風", page_icon="🌾", layout="centered", initial_sidebar_state="collapsed")
 
-    # ☁️ ☁️ 大自然天空雲朵主題風格 (Nature Sky & Cloud Theme) CSS ☁️ ☁️
+    # 🌾 鄉村部落風格 (Tribal & Earthy Natural Style) CSS 視覺注入
     st.markdown("""
     <style>
-    /* 全局背景：漸層天空藍 */
+    /* 全局背景與字體顏色 (溫潤的大地米黃與泥土棕) */
     .stApp {
-        background: linear-gradient(180deg, #E0F2FE 0%, #BAE6FD 35%, #F0F9FF 100%);
-        background-attachment: fixed;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background-color: #F7F4EB;
+        color: #3D312A;
+    }
+    
+    /* 頂部標題樣式 */
+    h1 {
+        color: #8C3A27 !important;
+        font-family: 'DFKai-SB', 'Noto Serif TC', serif;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(140, 58, 39, 0.15);
+    }
+    
+    h2, h3 {
+        color: #5C3A21 !important;
+        font-family: 'Noto Serif TC', serif;
     }
 
-    /* 雲朵卡片樣式：白雲浮雕質感與圓潤弧度 */
+    /* 題目卡片設計 (仿木質卡片 + 原民菱形圖騰雙重邊框感) */
     .quiz-card {
-        background: rgba(255, 255, 255, 0.92);
-        backdrop-filter: blur(8px);
-        padding: 28px;
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        box-shadow: 0 10px 25px -5px rgba(186, 230, 253, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
-        margin-top: 18px;
-        margin-bottom: 28px;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        color: #1E293B;
+        background: #FFFDF7;
+        padding: 24px;
+        border-radius: 12px;
+        border: 2px solid #D4B28C;
+        border-left: 6px solid #8C3A27; /* 經典部落陶土紅標記 */
+        box-shadow: 0 4px 10px rgba(92, 58, 33, 0.08);
+        margin-top: 15px;
+        margin-bottom: 25px;
+        transition: all 0.3s ease;
+        color: #3D312A;
     }
     .quiz-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 15px 30px -5px rgba(147, 197, 253, 0.6), 0 10px 12px -5px rgba(0, 0, 0, 0.04);
+        box-shadow: 0 6px 14px rgba(140, 58, 39, 0.12);
+        border-color: #A35C37;
     }
 
-    /* 標題與文字風格 */
-    h1 {
-        color: #0369A1 !important;
-        font-weight: 800 !important;
-        text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8);
-    }
-    h2, h3, h4 {
-        color: #0284C7 !important;
-    }
-
-    /* 分隔線 */
+    /* 分割線樣式 */
     hr {
-        border-top: 2px dashed #93C5FD !important;
-        opacity: 0.5;
+        border: 0;
+        height: 2px;
+        background-image: linear-gradient(to right, rgba(140, 58, 39, 0), rgba(140, 58, 39, 0.5), rgba(140, 58, 39, 0));
+        margin: 20px 0;
     }
 
-    /* Radio 選項樣式優化 */
-    div[role="radiogroup"] {
-        background: rgba(240, 249, 255, 0.6);
-        padding: 12px;
-        border-radius: 12px;
-        border: 1px solid #E0F2FE;
+    /* Segmented Control 導覽按鈕部落風美化 */
+    div[data-baseweb="segmented-control"] {
+        background-color: #E8DFC8 !important;
+        border-radius: 10px !important;
+        padding: 4px !important;
+        border: 1px solid #D4B28C !important;
+    }
+    div[data-baseweb="segmented-control"] button {
+        color: #5C3A21 !important;
+        font-weight: 600 !important;
+    }
+    div[data-baseweb="segmented-control"] button[aria-selected="true"] {
+        background-color: #8C3A27 !important;
+        color: #FFFDF7 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 2px 6px rgba(140, 58, 39, 0.3) !important;
     }
 
-    /* Toggle 開關主題色彩 */
-    div[data-testid="stToggleButton"] {
-        color: #0369A1;
+    /* Radio 選項與 Toggle 美化 */
+    .stRadio label {
+        color: #3D312A !important;
+        font-weight: 500;
     }
-
-    /* 連結設定 */
+    
+    /* 提示與訊息框 (溫暖草木綠與泥土棕提示) */
+    .stAlert {
+        border-radius: 8px !important;
+    }
+    
+    /* 輸入框美化 (竹編仿古樸質感) */
+    .stTextArea textarea {
+        background-color: #FAF7F0 !important;
+        border: 1px solid #C4A482 !important;
+        color: #3D312A !important;
+        border-radius: 8px !important;
+    }
+    .stTextArea textarea:focus {
+        border-color: #8C3A27 !important;
+        box-shadow: 0 0 0 1px #8C3A27 !important;
+    }
+    
+    /* 連結色彩 */
     a {
-        color: #0284C7 !important;
-        text-decoration: none !important;
-        font-weight: 600;
+        color: #8C3A27 !important;
+        text-decoration: underline !important;
+        font-weight: bold;
     }
     a:hover {
-        color: #0369A1 !important;
-        text-decoration: underline !important;
+        color: #A35C37 !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    st.title("☁️ 大自然天空認證平台")
-    st.caption("[請選擇練習平台]")
+    st.title("🌾 中高級認證 ‧ 部落學堂")
+    st.caption("❖ 傳承族語 ‧ 深耕文化 ❖")
 
     main_options = ["📋 認證考試說明", "🎧 聽力", "🗣️ 口說", "📖 閱讀", "✍️ 寫作"]
     current_tab = st.segmented_control("主選單導覽", main_options, default=None, label_visibility="collapsed")
@@ -495,7 +526,6 @@ def main():
     db = load_question_bank()
 
     if current_tab == "📋 認證考試說明":
-        # 🌟 保留您提供的超連結[cite: 1]
         st.subheader("📋 [認證考試說明](https://lokahsu.ilrdf.org.tw/web_lokahsu/Files/Guide/1_20251211_162558.pdf)")
         st.divider()
         st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫。")
@@ -539,7 +569,7 @@ def main():
             render_section("問答", db)
 
     st.write("---")
-    st.caption(f"© 2026 中高級認證 App 三一開發團隊 ｜ 系統版本： **{APP_VERSION}** ")
+    st.caption(f"🏹 2026 中高級認證 App 三一開發團隊 ｜ 系統版本： **{APP_VERSION}** ")
 
 if __name__ == "__main__":
     main()
