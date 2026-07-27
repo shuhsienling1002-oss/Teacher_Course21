@@ -2,7 +2,7 @@ import streamlit as st
 import random
 import json
 import os
-import re  # 引入正則表達式，執行最強大的容錯解析
+import re
 
 # 🚀 全域系統版本號
 APP_VERSION = "v2.0.0 (Build 20260619)"
@@ -58,9 +58,7 @@ def load_question_bank():
         "聽音選詞": [], "對話理解": [], "段落朗讀": [], "情境問答": [],
         "看圖表達": [], "詞彙語意": [], "語言結構": [], "句子聽寫": [], "問答": []
     }
-    db["_debug_msg"] = []
-
-    # 🌟 1. 自動掃描資料夾內所有的 .txt 檔案，不再管檔名叫做什麼
+    
     scanned_files = []
     for d in [base_dir, cwd_dir]:
         if not os.path.exists(d): continue
@@ -68,10 +66,9 @@ def load_question_bank():
             for f in os.listdir(d):
                 if f.lower().endswith(".txt") and f.lower() not in ["app.txt", "requirements.txt", "提示詞.txt"]:
                     scanned_files.append(os.path.join(d, f))
-        except Exception:
+        except:
             pass
 
-    # 🌟 2. 自動嘗試各種檔案編碼，防止雲端亂碼崩潰
     target_content = ""
     file_loaded = False
     encodings_to_try = ["utf-8", "utf-8-sig", "big5", "cp950"]
@@ -81,27 +78,23 @@ def load_question_bank():
             try:
                 with open(filepath, "r", encoding=enc) as f:
                     text_data = f.read()
-                    # 只要內容包含題庫特有字眼，就確定是目標題庫檔！
                     if "聽音選詞" in text_data and "對話理解" in text_data:
                         target_content = text_data
                         file_loaded = True
                         break
-            except Exception:
+            except:
                 continue
         if file_loaded:
             break
 
     if not file_loaded:
-        db["_debug_msg"].append(f"無法找到題庫內容。已掃描檔案清單：{set(scanned_files)}")
         return db
 
-    # 🌟 3. Regex 正則表達式自動分類引擎
     current_section = None
     for line in target_content.split("\n"):
         line = line.strip()
         if not line: continue
         
-        # 定位大題區塊
         if "聽音選詞" in line: current_section = "聽音選詞"
         elif "對話理解" in line: current_section = "對話理解"
         elif "段落朗讀" in line: current_section = "段落朗讀"
@@ -112,127 +105,201 @@ def load_question_bank():
         elif "句子聽寫" in line: current_section = "句子聽寫"
         elif "問答" in line and "情境問答" not in line: current_section = "問答"
         
-        # 只要字串開頭是「數字」配上「.」或「、」，就 100% 判定為題目抓入
         elif current_section and re.match(r'^\d+[\.、]', line):
             db[current_section].append(line)
             
     return db
 
 # ==========================================
-# 🎨 UI 元件渲染邏輯 (全面升級為 Regex 正規表達式，徹底防護格式錯誤)
+# 🎨 終極 UI 渲染邏輯 (物理字串切割，100%保證顯示)
 # ==========================================
 def render_mcq(line, prefix):
-    """渲染選擇題"""
+    """渲染選擇題 (物理切割，避免 Regex 失效)"""
     try:
-        q_match = re.search(r'^(.*?)(?=\(A\))', line)
-        q_text = q_match.group(1).strip() if q_match else line
-
-        opts_text_match = re.search(r'(\(A\).*?)(?=答案：)', line)
-        opts_str = opts_text_match.group(1) if opts_text_match else ""
-
-        opt_a = re.search(r'(\(A\).*?)(?=\(B\))', opts_str)
-        opt_b = re.search(r'(\(B\).*?)(?=\(C\))', opts_str)
-        opt_c = re.search(r'(\(C\).*?)(?=\(D\))', opts_str)
-        opt_d = re.search(r'(\(D\).*?$)', opts_str)
-
-        opts = []
-        if opt_a: opts.append(opt_a.group(1).strip())
-        if opt_b: opts.append(opt_b.group(1).strip())
-        if opt_c: opts.append(opt_c.group(1).strip())
-        if opt_d: opts.append(opt_d.group(1).strip())
-
-        ans_match = re.search(r'答案：(.*?)(?=。?分析：|$)', line)
-        ana_match = re.search(r'分析：(.*)', line)
-
-        ans_text = ans_match.group(1).strip().strip("。 ") if ans_match else ""
-        ana_text = ana_match.group(1).strip() if ana_match else "無"
-
-        st.markdown(f"**{q_text}**")
-        if opts:
-            user_ans = st.radio("請選擇：", opts, index=None, key=prefix)
-            if user_ans:
-                if ans_text in user_ans:
-                    st.success(f"✅ 正確！分析：{ana_text}")
-                else:
-                    st.error(f"❌ 錯誤。正確答案：{ans_text}。分析：{ana_text}")
-        else:
+        if "(A)" not in line:
             st.info(line)
-    except:
+            return
+
+        # 切割題目與選項區
+        q_part = line.split("(A)")
+        rest = "(A)" + line.split("(A)", 1)
+        
+        opts_str = rest
+        ans_str = ""
+        ana_str = ""
+        
+        # 切割解答與分析
+        if "答案：" in rest:
+            opts_str = rest.split("答案：")
+            ans_ana = rest.split("答案：")
+            if "分析：" in ans_ana:
+                ans_str = ans_ana.split("分析：").strip("。 ")
+                ana_str = ans_ana.split("分析：").strip()
+            else:
+                ans_str = ans_ana.strip("。 ")
+
+        st.markdown(f"**{q_part.strip()}**")
+        
+        # 安全切割四個選項
+        opts = []
+        for tag in ["(A)", "(B)", "(C)", "(D)"]:
+            if tag in opts_str:
+                opt_text = opts_str.split(tag)
+                for next_tag in ["(B)", "(C)", "(D)"]:
+                    if next_tag > tag and next_tag in opt_text:
+                        opt_text = opt_text.split(next_tag)
+                opts.append(tag + " " + opt_text.strip())
+
+        user_ans = st.radio("請選擇：", opts, index=None, key=prefix)
+        
+        # 🌟 新增萬用解答開關，不用作答也能看答案
+        if st.toggle("💡 顯示解答與分析", key=f"t_ans_{prefix}"):
+            if ans_str:
+                msg = f"**正確答案：** {ans_str}"
+                if ana_str: msg += f"\n\n**分析：** {ana_str}"
+                st.success(msg)
+            else:
+                st.warning("無標準答案。")
+        elif user_ans and ans_str:
+            if ans_str in user_ans:
+                st.success(f"✅ 正確！" + (f"分析：{ana_str}" if ana_str else ""))
+            else:
+                st.error(f"❌ 錯誤。正確答案：{ans_str}。" + (f"分析：{ana_str}" if ana_str else ""))
+    except Exception as e:
         st.info(line) 
 
 def render_reading(line, prefix):
     """渲染段落朗讀"""
     try:
-        am_match = re.search(r'^(.*?)(?=\(中文)', line)
-        zh_match = re.search(r'\(中文(?:大意)?：(.*?)\)', line)
-
-        if am_match and zh_match:
-            st.markdown(f"📖 **{am_match.group(1).strip()}**")
-            if st.toggle("顯示中文翻譯", key=f"t_{prefix}"):
-                st.success(zh_match.group(1).strip())
-        else:
-            st.info(line)
+        q_part = line
+        ch_part = ""
+        if "(中文：" in line:
+            q_part, ch_part = line.split("(中文：")
+            ch_part = ch_part.strip(")")
+        elif "(中文大意：" in line:
+            q_part, ch_part = line.split("(中文大意：")
+            ch_part = ch_part.strip(")")
+        
+        st.markdown(f"📖 **{q_part.strip()}**")
+        if ch_part:
+            if st.toggle("💡 顯示中文翻譯", key=f"t_{prefix}"):
+                st.success(ch_part)
     except:
         st.info(line)
 
 def render_qa(line, prefix):
     """渲染問答與情境問答"""
     try:
-        title_m = re.search(r'(?:題目：|^\d+[\.、])(.*?)(?=中文：)', line)
-        zh_m = re.search(r'中文：(.*?)(?=參考回答：|作答參考：)', line)
-        ans_m = re.search(r'(?:參考回答：|作答參考：)(.*?)(?=分析：|$)', line)
-        ana_m = re.search(r'分析：(.*)', line)
-
-        if title_m and zh_m:
-            st.markdown(f"🗣️ **{title_m.group(1).strip()}**")
-            st.caption(f"中文提示：{zh_m.group(1).strip()}")
-            if st.toggle("顯示參考解答", key=f"t_{prefix}"):
-                ans_text = ans_m.group(1).strip() if ans_m else ""
-                ana_text = f"\n\n分析：{ana_m.group(1).strip()}" if ana_m else ""
-                st.success(f"參考解答：{ans_text}{ana_text}")
+        text = line
+        q_am = text
+        ch_hint = ""
+        ans = ""
+        ana = ""
+        
+        if "中文：" in text:
+            parts = text.split("中文：")
+            q_am = parts
+            text = parts
+            
+        if "參考回答：" in text:
+            parts = text.split("參考回答：")
+            if not ch_hint: ch_hint = parts
+            text = parts
+        elif "作答參考：" in text:
+            parts = text.split("作答參考：")
+            if not ch_hint: ch_hint = parts
+            text = parts
+            
+        if "分析：" in text:
+            parts = text.split("分析：")
+            if not ans: ans = parts
+            ana = parts
         else:
-            st.info(line)
+            if not ans and ch_hint: ans = text
+        
+        q_am = q_am.replace("題目：", " 題目：")
+        
+        st.markdown(f"🗣️ **{q_am.strip()}**")
+        if ch_hint:
+            st.caption(f"中文提示：{ch_hint.strip()}")
+            
+        if ans or ana:
+            if st.toggle("💡 顯示參考解答", key=f"t_{prefix}"):
+                msg = ""
+                if ans: msg += f"參考解答：{ans.strip()}"
+                if ana: msg += f"\n\n分析：{ana.strip()}"
+                st.success(msg)
     except:
         st.info(line)
 
 def render_picture(line, prefix):
     """渲染看圖表達"""
     try:
-        pic_m = re.search(r'圖片情境：(.*?)(?=中文提示：|作答參考：)', line)
-        hint_m = re.search(r'中文提示：(.*?)(?=作答參考：)', line)
-        ans_m = re.search(r'作答參考：(.*?)(?=重點(?:分析)?：|$)', line)
-        ana_m = re.search(r'重點(?:分析)?：(.*)', line)
-
-        if pic_m:
-            st.markdown(f"🖼️ **圖片情境：** {pic_m.group(1).strip()}")
-            if hint_m:
-                st.caption(f"中文提示：{hint_m.group(1).strip()}")
-            if st.toggle("顯示作答參考", key=f"t_{prefix}"):
-                ans_text = ans_m.group(1).strip() if ans_m else ""
-                ana_text = f"\n\n重點：{ana_m.group(1).strip()}" if ana_m else ""
-                st.success(f"作答參考：{ans_text}{ana_text}")
-        else:
-            st.info(line)
+        text = line
+        pic = text
+        hint = ""
+        ans = ""
+        ana = ""
+        
+        if "圖片情境：" in text:
+            pic = text.split("圖片情境：")
+            
+        if "中文提示：" in pic:
+            hint_part = pic.split("中文提示：")
+            pic = pic.split("中文提示：")
+            if "作答參考：" in hint_part:
+                hint = hint_part.split("作答參考：")
+                ans_part = hint_part.split("作答參考：")
+                
+                if "重點分析：" in ans_part:
+                    ans = ans_part.split("重點分析：")
+                    ana = ans_part.split("重點分析：")
+                elif "重點：" in ans_part:
+                    ans = ans_part.split("重點：")
+                    ana = ans_part.split("重點：")
+                else:
+                    ans = ans_part
+            else:
+                hint = hint_part
+        
+        st.markdown(f"🖼️ **圖片情境：** {pic.strip()}")
+        if hint:
+            st.caption(f"中文提示：{hint.strip()}")
+        if ans or ana:
+            if st.toggle("💡 顯示作答參考", key=f"t_{prefix}"):
+                msg = ""
+                if ans: msg += f"作答參考：{ans.strip()}"
+                if ana: msg += f"\n\n重點：{ana.strip()}"
+                st.success(msg)
     except:
         st.info(line)
 
 def render_dictation(line, prefix):
     """渲染句子聽寫"""
     try:
-        am_m = re.search(r'阿美語：(.*?)(?=中文：)', line)
-        if not am_m:
-            am_m = re.search(r'^\d+[\.、](.*?)(?=中文：)', line)
+        text = line
+        am = text
+        ch = ""
+        ana = ""
+        
+        if "中文：" in text:
+            parts = text.split("中文：")
+            am = parts.replace("阿美語：", "")
+            text = parts
             
-        zh_m = re.search(r'中文：(.*?)(?=分析：|$)', line)
-        ana_m = re.search(r'分析：(.*)', line)
-
-        if am_m and zh_m:
-            st.markdown(f"✍️ **{am_m.group(1).strip()}**")
-            if st.toggle("顯示翻譯與分析", key=f"t_{prefix}"):
-                ana_text = f"\n\n分析：{ana_m.group(1).strip()}" if ana_m else ""
-                st.success(f"中文：{zh_m.group(1).strip()}{ana_text}")
-        else:
-            st.info(line)
+            if "分析：" in text:
+                ch = text.split("分析：")
+                ana = text.split("分析：")
+            else:
+                ch = text
+        
+        st.markdown(f"✍️ **{am.strip()}**")
+        if ch or ana:
+            if st.toggle("💡 顯示翻譯與分析", key=f"t_{prefix}"):
+                msg = ""
+                if ch: msg += f"中文：{ch.strip()}"
+                if ana: msg += f"\n\n分析：{ana.strip()}"
+                st.success(msg)
     except:
         st.info(line)
 
@@ -241,15 +308,10 @@ def render_section(section_name, db):
     questions = db.get(section_name, [])
     if not questions:
         st.warning(f"⚠️ 系統抓不到【{section_name}】的資料。")
-        if "_debug_msg" in db and db["_debug_msg"]:
-            st.error("🔍 **系統路徑與編碼偵錯報告**")
-            for msg in db["_debug_msg"]:
-                st.info(msg)
         return
 
     for i, line in enumerate(questions):
         with st.container():
-            # 賦予卡片樣式
             st.markdown('<div class="quiz-card">', unsafe_allow_html=True)
             if "聽音選詞" in section_name or "對話理解" in section_name or section_name in ["詞彙語意", "語言結構"]:
                 render_mcq(line, f"{section_name}_{i}")
@@ -272,13 +334,13 @@ def main():
     # 極簡北歐冷調風 (Minimalist Nordic Cold Tone) CSS
     st.markdown("""
     <style>
-    /* 核心題目卡片式容器 */
+    /* 核心題目卡片式容器：只有顯式宣告的卡片才會擁有此風格 */
     .quiz-card {
         background-color: #F8F9FA;
         padding: 24px;
-        border-radius: 8px;
+        border-radius: 12px;
         border: 1px solid #E9ECEF;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         margin-top: 15px;
         margin-bottom: 25px;
         transition: all 0.3s ease;
@@ -311,8 +373,6 @@ def main():
         st.subheader("📋 認證考試說明")
         st.divider()
         st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫。")
-        if "_debug_msg" in db and db["_debug_msg"]:
-            st.error(f"⚠️ 系統異常：{db['_debug_msg']}。請切換至「閱讀」等測驗頁面查看詳細錯誤報告。")
 
     elif current_tab == "🎧 聽力":
         st.subheader("🎧 聽力測驗 (pitengil)")
