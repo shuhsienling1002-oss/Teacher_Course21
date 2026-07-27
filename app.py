@@ -1,3 +1,4 @@
+
 import streamlit as st
 import time
 import os
@@ -259,7 +260,6 @@ def init_quiz():
     # Q3: 句子翻譯
     q3_target = random.choice(SENTENCES)
     other_sentences = [s['zh'] for s in SENTENCES if s['zh'] != q3_target['zh']]
-
 
 import streamlit as stimport timeimport osimport randomfrom gtts import gTTSfrom io import BytesIO
 # --- 0. 系統配置 ---
