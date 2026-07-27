@@ -90,7 +90,6 @@ def load_question_bank():
     if not file_loaded:
         return db
 
-    # 使用緩衝區將跨行的題目合併為單一字串
     current_section = None
     current_question = []
 
@@ -103,12 +102,10 @@ def load_question_bank():
 
     for line in target_content.split("\n"):
         line = line.strip()
-        # 遇到空行代表題目結束，存入題庫
         if not line:
             save_question()
             continue
         
-        # 判斷是否為題型切換標題
         if "一、選擇題（聽音選詞）" in line: save_question(); current_section = "聽音選詞"
         elif "二、選擇題（對話理解）" in line: save_question(); current_section = "對話理解"
         elif "三、段落朗讀" in line: save_question(); current_section = "段落朗讀"
@@ -119,21 +116,19 @@ def load_question_bank():
         elif "八、句子聽寫" in line: save_question(); current_section = "句子聽寫"
         elif "九、問答" in line: save_question(); current_section = "問答"
         
-        # 開頭為數字代表新題目的開始
         elif re.match(r'^\d+[\.、]', line):
             save_question()
             current_question.append(line)
-        # 屬於目前題目的後續內容（選項或答案）
         else:
             if current_question:
                 current_question.append(line)
 
-    save_question() # 儲存最後一題
+    save_question() 
 
     return db
 
 # ==========================================
-# 🎨 終極 UI 渲染邏輯 (物理字串切割，100%保證顯示)
+# 🎨 終極 UI 渲染邏輯 (修復索引陣列漏失問題)
 # ==========================================
 def render_mcq(line, prefix):
     """渲染選擇題 (修復 split 回傳 list 的問題，並新增聽力題目隱藏功能)"""
@@ -142,7 +137,7 @@ def render_mcq(line, prefix):
             st.info(line)
             return
 
-        # 限制分割次數，並明確取值
+        # 限制分割次數，並明確取值 (修復點)
         parts = line.split("(A)", 1)
         q_part = parts.strip()
         rest = "(A)" + parts
@@ -171,7 +166,6 @@ def render_mcq(line, prefix):
         else:
             st.markdown(f"**{q_part}**")
 
-        # 安全切割四個選項
         opts = []
         for tag in ["(A)", "(B)", "(C)", "(D)"]:
             if tag in opts_str:
@@ -252,7 +246,6 @@ def render_qa(line, prefix):
 
         q_am = q_am.replace("題目：", " 題目：")
 
-        # 🌟 口說測驗-情境問答專屬：隱藏題目與提示功能
         is_situational = "情境問答" in prefix
         if is_situational:
             if st.toggle("👁️ 顯示題目與提示", key=f"t_show_q_{prefix}"):
@@ -309,9 +302,7 @@ def render_picture(line, prefix):
             else:
                 hint = hint_part.strip()
 
-        # 🌟 動態讀取對應圖片邏輯 (假設 prefix 格式為 "看圖表達_0")
         try:
-            # 從 prefix 中解析題號 (index + 1)
             idx = int(prefix.split('_')[-1]) + 1
             img_path_jpg = f"assets/images/picture_{idx}.jpg"
             img_path_png = f"assets/images/picture_{idx}.png"
@@ -323,14 +314,13 @@ def render_picture(line, prefix):
             else:
                 st.info(f"🖼️ 圖片佔位區：若要顯示圖片，請將圖片命名為 `picture_{idx}.jpg` 或 `.png`，並放置於 `assets/images/` 資料夾中。")
         except:
-            pass # 若解析題號失敗則安全跳過
+            pass 
 
         st.markdown(f"🖼️ **圖片情境：** {pic}")
         
         if hint:
             st.caption(f"中文提示：{hint}")
             
-        # 加入輸入框作為草稿區
         st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="可以在此輸入您的口說草稿...")
             
         if ans or ana:
@@ -362,10 +352,8 @@ def render_dictation(line, prefix):
             else:
                 ch = text.strip()
         
-        # 加入作答的文字輸入框，模擬真實寫作情境
         st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="請在此輸入您聽寫的句子...")
         
-        # 🌟 寫作測驗專屬：隱藏聽寫原文功能
         if st.toggle("👁️ 顯示聽寫原文", key=f"t_show_dict_{prefix}"):
             st.markdown(f"✍️ **{am}**")
 
@@ -410,21 +398,21 @@ def main():
     st.markdown("""
     <style>
     .quiz-card {
-        background-color: #E0F7FA; /* 淺海藍基底色 (Shallow Ocean Cyan) */
+        background-color: #E0F7FA;
         padding: 24px;
         border-radius: 12px;
-        border: 1px solid #80DEEA; /* 珊瑚水藍邊界 (Coral Blue Border) */
-        box-shadow: 0 4px 12px rgba(0, 96, 100, 0.15); /* 深海壓力陰影 (Deep Sea Shadow) */
+        border: 1px solid #80DEEA;
+        box-shadow: 0 4px 12px rgba(0, 96, 100, 0.15);
         margin-top: 15px;
         margin-bottom: 25px;
         transition: all 0.3s ease;
-        color: #004D40; /* 絕對深海墨綠字體，確保絕對視覺對比度 (Abyssal Green Text) */
+        color: #004D40;
     }
     .quiz-card:hover {
-        box-shadow: 0 8px 24px rgba(0, 151, 167, 0.25); /* 游標懸停波紋效應 (Hover Ripple Effect) */
+        box-shadow: 0 8px 24px rgba(0, 151, 167, 0.25);
         border-color: #4DD0E1;
     }
-    hr { border-top: 1px solid #B2EBF2; } /* 淺水波紋分隔線 (Water Ripple Divider) */
+    hr { border-top: 1px solid #B2EBF2; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -447,7 +435,6 @@ def main():
     db = load_question_bank()
 
     if current_tab == "📋 認證考試說明":
-        # 🌟 更新這裡：加入您提供的超連結
         st.subheader("📋 [認證考試說明](https://lokahsu.ilrdf.org.tw/web_lokahsu/Files/Guide/1_20251211_162558.pdf)")
         st.divider()
         st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫。")
