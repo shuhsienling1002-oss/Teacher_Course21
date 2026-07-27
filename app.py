@@ -5,7 +5,7 @@ import os
 import re
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.2.1 (CODE VAJRA - Visual Decoupling Matrix)"
+APP_VERSION = "v2.1.4 (Build 20260727 - Exam Guide Link)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -53,12 +53,13 @@ QUIZ_DATA = [
 def load_question_bank():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     cwd_dir = os.getcwd()
+    
     db = {
         "聽音選詞": [], "對話理解": [], "段落朗讀": [], "情境問答": [],
         "看圖表達": [], "詞彙語意": [], "語言結構": [], "句子聽寫": [], "問答": []
     }
-    scanned_files = []
     
+    scanned_files = []
     for d in [base_dir, cwd_dir]:
         if not os.path.exists(d): continue
         try:
@@ -67,7 +68,7 @@ def load_question_bank():
                     scanned_files.append(os.path.join(d, f))
         except:
             pass
-            
+
     target_content = ""
     file_loaded = False
     encodings_to_try = ["utf-8", "utf-8-sig", "big5", "cp950"]
@@ -88,18 +89,18 @@ def load_question_bank():
             
     if not file_loaded:
         return db
-
+        
     # 使用緩衝區將跨行的題目合併為單一字串
     current_section = None
     current_question = []
-
+    
     def save_question():
         if current_section and current_question:
             q_text = " ".join(current_question).strip()
             if re.match(r'^\d+[\.、]', q_text):
                 db[current_section].append(q_text)
             current_question.clear()
-
+            
     for line in target_content.split("\n"):
         line = line.strip()
         # 遇到空行代表題目結束，存入題庫
@@ -128,18 +129,20 @@ def load_question_bank():
                 current_question.append(line)
                 
     save_question() # 儲存最後一題
+    
     return db
 
 # ==========================================
-# 🎨 終極 UI 渲染邏輯 (強制視覺分離問與答)
+# 🎨 終極 UI 渲染邏輯 (物理字串切割，100%保證顯示)
 # ==========================================
 def render_mcq(line, prefix):
-    """渲染選擇題：強制題幹與選項分層"""
+    """渲染選擇題 (修復 split 回傳 list 的問題，並新增聽力題目隱藏功能)"""
     try:
         if "(A)" not in line:
             st.info(line)
             return
-
+            
+        # 限制分割次數，並明確取值
         parts = line.split("(A)", 1)
         q_part = parts.strip()
         rest = "(A)" + parts
@@ -152,20 +155,23 @@ def render_mcq(line, prefix):
             ans_parts = rest.split("答案：", 1)
             opts_str = ans_parts.strip()
             ans_ana = ans_parts
+            
             if "分析：" in ans_ana:
                 final_parts = ans_ana.split("分析：", 1)
                 ans_str = final_parts.strip("。 ")
                 ana_str = final_parts.strip()
             else:
                 ans_str = ans_ana.strip("。 ")
-
+                
+        # 🌟 聽力測驗專屬：隱藏題目文字功能
         is_listening = "聽音選詞" in prefix or "對話理解" in prefix
         if is_listening:
             if st.toggle("👁️ 顯示題目文字", key=f"t_show_q_{prefix}"):
-                st.markdown(f"**【題目】** {q_part}")
+                st.markdown(f"**{q_part}**")
         else:
-            st.markdown(f"**【題目】** {q_part}")
-
+            st.markdown(f"**{q_part}**")
+            
+        # 安全切割四個選項
         opts = []
         for tag in ["(A)", "(B)", "(C)", "(D)"]:
             if tag in opts_str:
@@ -174,23 +180,21 @@ def render_mcq(line, prefix):
                     if next_tag > tag and next_tag in opt_text:
                         opt_text = opt_text.split(next_tag, 1)
                 opts.append(tag + " " + opt_text.strip())
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        user_ans = st.radio("👉 **請選擇您的答案：**", opts, index=None, key=prefix)
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.toggle("✅ 顯示解答與分析", key=f"t_ans_{prefix}"):
+                
+        user_ans = st.radio("請選擇：", opts, index=None, key=prefix)
+        
+        if st.toggle("💡 顯示解答與分析", key=f"t_ans_{prefix}"):
             if ans_str:
-                msg = f"**【正確答案】** {ans_str}"
-                if ana_str: msg += f"\n\n**【分析】** {ana_str}"
+                msg = f"**正確答案：** {ans_str}"
+                if ana_str: msg += f"\n\n**分析：** {ana_str}"
                 st.success(msg)
             else:
                 st.warning("無標準答案。")
         elif user_ans and ans_str:
             if ans_str in user_ans:
-                st.success(f"🎉 正確！" + (f"\n\n**【分析】** {ana_str}" if ana_str else ""))
+                st.success(f"✅ 正確！" + (f"分析：{ana_str}" if ana_str else ""))
             else:
-                st.error(f"❌ 錯誤。**【正確答案】** {ans_str}。" + (f"\n\n**【分析】** {ana_str}" if ana_str else ""))
+                st.error(f"❌ 錯誤。正確答案：{ans_str}。" + (f"分析：{ana_str}" if ana_str else ""))
     except Exception as e:
         st.info(line)
 
@@ -207,17 +211,16 @@ def render_reading(line, prefix):
             parts = line.split("(中文大意：", 1)
             q_part = parts.strip()
             ch_part = parts.strip(")")
-
-        st.markdown(f"📖 **【段落】** {q_part}")
-        st.markdown("<br>", unsafe_allow_html=True)
+            
+        st.markdown(f"📖 **{q_part}**")
         if ch_part:
-            if st.toggle("✅ 顯示中文翻譯", key=f"t_{prefix}"):
-                st.success(f"**【中文】** {ch_part}")
+            if st.toggle("💡 顯示中文翻譯", key=f"t_{prefix}"):
+                st.success(ch_part)
     except:
         st.info(line)
 
 def render_qa(line, prefix):
-    """渲染問答與情境問答：強制隔離並加入專屬作答區塊"""
+    """渲染問答與情境問答"""
     try:
         text = line
         q_am = text
@@ -247,37 +250,31 @@ def render_qa(line, prefix):
             if not ans:
                 ans = text.strip()
                 
-        # 移除非必要的題目字眼
-        q_am = re.sub(r'^\d+[\.、]\s*題目：', '', q_am)
-        q_am = re.sub(r'^\d+[\.、]\s*', '', q_am).strip()
-
+        q_am = q_am.replace("題目：", " 題目：")
+        
+        # 🌟 口說測驗-情境問答專屬：隱藏題目與提示功能
         is_situational = "情境問答" in prefix
         if is_situational:
             if st.toggle("👁️ 顯示題目與提示", key=f"t_show_q_{prefix}"):
-                st.markdown(f"🗣️ **【題目】** {q_am}")
+                st.markdown(f"🗣️ **{q_am}**")
                 if ch_hint:
-                    st.caption(f"💡 **【中文提示】** {ch_hint}")
+                    st.caption(f"中文提示：{ch_hint}")
         else:
-            st.markdown(f"🗣️ **【題目】** {q_am}")
+            st.markdown(f"🗣️ **{q_am}**")
             if ch_hint:
-                st.caption(f"💡 **【中文提示】** {ch_hint}")
-
-        # 🌟 強制加入：使用者的作答緩衝區 (分離題目與答案)
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.text_area("✍️ **請在此輸入您的回答：**", key=f"input_{prefix}", placeholder="請在此作答...")
-
-        st.markdown("<br>", unsafe_allow_html=True)
+                st.caption(f"中文提示：{ch_hint}")
+                
         if ans or ana:
-            if st.toggle("✅ 顯示參考解答", key=f"t_{prefix}"):
+            if st.toggle("💡 顯示參考解答", key=f"t_{prefix}"):
                 msg = ""
-                if ans: msg += f"**【參考解答】** {ans}"
-                if ana: msg += f"\n\n**【分析】** {ana}"
+                if ans: msg += f"參考解答：{ans}"
+                if ana: msg += f"\n\n分析：{ana}"
                 st.success(msg)
     except:
         st.info(line)
 
 def render_picture(line, prefix):
-    """渲染看圖表達：強制隔離並加入專屬作答區塊"""
+    """渲染看圖表達，並支援動態載入對應題號圖片"""
     try:
         text = line
         pic = text
@@ -293,10 +290,12 @@ def render_picture(line, prefix):
             parts = pic.split("中文提示：", 1)
             pic = parts.strip()
             hint_part = parts
+            
             if "作答參考：" in hint_part:
                 h_parts = hint_part.split("作答參考：", 1)
                 hint = h_parts.strip()
                 ans_part = h_parts
+                
                 if "重點分析：" in ans_part:
                     a_parts = ans_part.split("重點分析：", 1)
                     ans = a_parts.strip()
@@ -309,11 +308,14 @@ def render_picture(line, prefix):
                     ans = ans_part.strip()
             else:
                 hint = hint_part.strip()
-
+                
+        # 🌟 動態讀取對應圖片邏輯 (假設 prefix 格式為 "看圖表達_0")
         try:
+            # 從 prefix 中解析題號 (index + 1)
             idx = int(prefix.split('_')[-1]) + 1
             img_path_jpg = f"assets/images/picture_{idx}.jpg"
             img_path_png = f"assets/images/picture_{idx}.png"
+            
             if os.path.exists(img_path_jpg):
                 st.image(img_path_jpg, use_container_width=True)
             elif os.path.exists(img_path_png):
@@ -321,28 +323,27 @@ def render_picture(line, prefix):
             else:
                 st.info(f"🖼️ 圖片佔位區：若要顯示圖片，請將圖片命名為 `picture_{idx}.jpg` 或 `.png`，並放置於 `assets/images/` 資料夾中。")
         except:
-            pass 
+            pass # 若解析題號失敗則安全跳過
             
-        st.markdown(f"🖼️ **【圖片情境】** {pic}")
-        if hint:
-            st.caption(f"💡 **【中文提示】** {hint}")
-
-        # 🌟 強制加入：使用者的作答緩衝區
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.text_area("✍️ **請在此作答：**", key=f"input_{prefix}", placeholder="可以在此輸入您的口說草稿...")
+        st.markdown(f"🖼️ **圖片情境：** {pic}")
         
-        st.markdown("<br>", unsafe_allow_html=True)
+        if hint:
+            st.caption(f"中文提示：{hint}")
+            
+        # 加入輸入框作為草稿區
+        st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="可以在此輸入您的口說草稿...")
+        
         if ans or ana:
-            if st.toggle("✅ 顯示作答參考", key=f"t_{prefix}"):
+            if st.toggle("💡 顯示作答參考", key=f"t_{prefix}"):
                 msg = ""
-                if ans: msg += f"**【作答參考】** {ans}"
-                if ana: msg += f"\n\n**【重點】** {ana}"
+                if ans: msg += f"作答參考：{ans}"
+                if ana: msg += f"\n\n重點：{ana}"
                 st.success(msg)
     except:
         st.info(line)
 
 def render_dictation(line, prefix):
-    """渲染句子聽寫：強制隔離並加入專屬作答區塊"""
+    """渲染句子聽寫"""
     try:
         text = line
         am = text
@@ -353,26 +354,26 @@ def render_dictation(line, prefix):
             parts = text.split("中文：", 1)
             am = parts.replace("阿美語：", "").strip()
             text = parts
+            
             if "分析：" in text:
                 sub_parts = text.split("分析：", 1)
                 ch = sub_parts.strip()
                 ana = sub_parts.strip()
             else:
                 ch = text.strip()
-
-        # 🌟 強制加入：使用者的作答緩衝區
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.text_area("✍️ **請在此作答：**", key=f"input_{prefix}", placeholder="請在此輸入您聽寫的句子...")
+                
+        # 加入作答的文字輸入框，模擬真實寫作情境
+        st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="請在此輸入您聽寫的句子...")
         
-        st.markdown("<br>", unsafe_allow_html=True)
+        # 🌟 寫作測驗專屬：隱藏聽寫原文功能
         if st.toggle("👁️ 顯示聽寫原文", key=f"t_show_dict_{prefix}"):
-            st.markdown(f"**【原文】** {am}")
+            st.markdown(f"✍️ **{am}**")
             
         if ch or ana:
-            if st.toggle("✅ 顯示翻譯與分析", key=f"t_{prefix}"):
+            if st.toggle("💡 顯示翻譯與分析", key=f"t_{prefix}"):
                 msg = ""
-                if ch: msg += f"**【中文】** {ch}"
-                if ana: msg += f"\n\n**【分析】** {ana}"
+                if ch: msg += f"中文：{ch}"
+                if ana: msg += f"\n\n分析：{ana}"
                 st.success(msg)
     except:
         st.info(line)
@@ -383,7 +384,7 @@ def render_section(section_name, db):
     if not questions:
         st.warning(f"⚠️ 系統抓不到【{section_name}】的資料。")
         return
-
+        
     for i, line in enumerate(questions):
         with st.container():
             st.markdown('<div class="quiz-card">', unsafe_allow_html=True)
@@ -400,73 +401,52 @@ def render_section(section_name, db):
             st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# 🚀 應用程式主邏輯 (Main) - 民族風樣式 (Ethnic Style)
+# 🚀 應用程式主邏輯 (Main)
 # ==========================================
 def main():
-    st.set_page_config(page_title="中高級族語認證", page_icon="🌾", layout="centered", initial_sidebar_state="collapsed")
-
-    # 民族風 (Ethnic Style) CSS
+    st.set_page_config(page_title="中高級認證", page_icon="🎓", layout="centered", initial_sidebar_state="collapsed")
+    
+    # 🌟 VAJRA 深空科技冷調風 (Cyberpunk Dark Mode) CSS
     st.markdown("""
     <style>
-    /* 大地色系背景 */
-    .stApp {
-        background-color: #FDF4E3;
-        color: #4E342E;
-    }
-    /* 仿傳統圖騰編織邊框與溫暖色調的卡片 */
     .quiz-card {
-        background-color: #FFFFFF;
+        background-color: #1E1E2E;
         padding: 24px;
-        border-radius: 8px;
-        border: 2px solid #D7CCC8;
-        border-left: 10px solid #C62828; /* 傳統服飾常見的阿美族紅 */
-        box-shadow: 0 4px 12px rgba(198, 40, 40, 0.08);
+        border-radius: 12px;
+        border: 1px solid #89B4FA;
+        box-shadow: 0 4px 15px rgba(137, 180, 250, 0.15);
         margin-top: 15px;
         margin-bottom: 25px;
         transition: all 0.3s ease;
+        color: #CDD6F4;
     }
-    .quiz-card:hover {
-        border-left: 10px solid #1565C0; /* 傳統服飾的藍色點綴 */
-        box-shadow: 0 6px 16px rgba(21, 101, 192, 0.15);
-    }
-    hr { 
-        border-top: 2px dashed #8D6E63; 
-    }
-    h1, h2, h3 {
-        color: #B71C1C !important;
-    }
-    /* 調整 text_area 以符合民族風 */
-    .stTextArea textarea {
-        background-color: #FAFAFA;
-        border: 1px solid #D7CCC8;
-        border-radius: 4px;
-        color: #3E2723;
-    }
+    hr { border-top: 1px solid #45475A; }
     </style>
     """, unsafe_allow_html=True)
-
-    st.title("🌾 中高級族語認證")
-    st.caption("[請選擇部落學習平台]")
-
+    
+    st.title("🎓 中高級認證")
+    st.caption("[請選擇練習平台]")
+    
     main_options = ["📋 認證考試說明", "🎧 聽力", "🗣️ 口說", "📖 閱讀", "✍️ 寫作"]
-    current_tab = st.segmented_control("部落選單導覽", main_options, default=None, label_visibility="collapsed")
-
+    current_tab = st.segmented_control("主選單導覽", main_options, default=None, label_visibility="collapsed")
+    
     if "previous_tab" not in st.session_state:
         st.session_state.previous_tab = None
-
+        
     if st.session_state.previous_tab != current_tab:
         st.session_state.submitted = False
         st.session_state.audio_triggered = False
         if "writing_submitted" in st.session_state:
             st.session_state.writing_submitted = False
         st.session_state.previous_tab = current_tab
-
+        
     db = load_question_bank()
-
+    
     if current_tab == "📋 認證考試說明":
+        # 🌟 更新這裡：加入您提供的超連結
         st.subheader("📋 [認證考試說明](https://lokahsu.ilrdf.org.tw/web_lokahsu/Files/Guide/1_20251211_162558.pdf)")
         st.divider()
-        st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫，願祖先的智慧與你同在。")
+        st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫。")
         
     elif current_tab == "🎧 聽力":
         st.subheader("🎧 聽力測驗 (pitengil)")
@@ -505,7 +485,7 @@ def main():
             render_section("句子聽寫", db)
         elif writing_sub == "問答":
             render_section("問答", db)
-
+            
     st.write("---")
     st.caption(f"© 2026 中高級認證 App 三一開發團隊 ｜ 系統版本： **{APP_VERSION}** ")
 
