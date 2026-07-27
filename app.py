@@ -128,16 +128,15 @@ def load_question_bank():
     return db
 
 # ==========================================
-# 🎨 終極 UI 渲染邏輯 (修復索引陣列漏失問題)
+# 🎨 終極 UI 渲染邏輯 (修復索引陣列漏失問題 + 因果強制鎖)
 # ==========================================
 def render_mcq(line, prefix):
-    """渲染選擇題 (修復 split 回傳 list 的問題，並新增聽力題目隱藏功能)"""
+    """渲染選擇題 (導入因果強制鎖：作答後才顯示答案)"""
     try:
         if "(A)" not in line:
             st.info(line)
             return
 
-        # 限制分割次數，並明確取值 (修復點)
         parts = line.split("(A)", 1)
         q_part = parts.strip()
         rest = "(A)" + parts
@@ -175,25 +174,25 @@ def render_mcq(line, prefix):
                         opt_text = opt_text.split(next_tag, 1)
                 opts.append(tag + " " + opt_text.strip())
 
+        # ==========================================
+        # 🔐 因果強制鎖 (Causal Forced Lock)：作答後顯示邏輯
+        # ==========================================
         user_ans = st.radio("請選擇：", opts, index=None, key=prefix)
         
-        if st.toggle("💡 顯示解答與分析", key=f"t_ans_{prefix}"):
+        # 只有當 user_ans 不是 None (代表使用者已選取作答) 時，才顯示對錯與解析
+        if user_ans is not None:
             if ans_str:
-                msg = f"**正確答案：** {ans_str}"
-                if ana_str: msg += f"\n\n**分析：** {ana_str}"
-                st.success(msg)
+                if ans_str in user_ans:
+                    st.success(f"✅ 正確！" + (f"\n\n**分析：** {ana_str}" if ana_str else ""))
+                else:
+                    st.error(f"❌ 錯誤。正確答案：{ans_str}。" + (f"\n\n**分析：** {ana_str}" if ana_str else ""))
             else:
-                st.warning("無標準答案。")
-        elif user_ans and ans_str:
-            if ans_str in user_ans:
-                st.success(f"✅ 正確！" + (f"分析：{ana_str}" if ana_str else ""))
-            else:
-                st.error(f"❌ 錯誤。正確答案：{ans_str}。" + (f"分析：{ana_str}" if ana_str else ""))
+                st.warning("本題無標準答案。")
     except Exception as e:
         st.info(line)
 
 def render_reading(line, prefix):
-    """渲染段落朗讀"""
+    """渲染段落朗讀 (導入因果強制鎖：點擊後顯示)"""
     try:
         q_part = line
         ch_part = ""
@@ -207,14 +206,19 @@ def render_reading(line, prefix):
             ch_part = parts.strip(")")
         
         st.markdown(f"📖 **{q_part}**")
+        
         if ch_part:
-            if st.toggle("💡 顯示中文翻譯", key=f"t_{prefix}"):
+            # 使用按鈕取代直接切換
+            if st.button("👁️ 朗讀完畢，顯示中文翻譯", key=f"btn_read_{prefix}"):
+                st.session_state[f"show_read_{prefix}"] = True
+                
+            if st.session_state.get(f"show_read_{prefix}", False):
                 st.success(ch_part)
     except:
         st.info(line)
 
 def render_qa(line, prefix):
-    """渲染問答與情境問答"""
+    """渲染問答與情境問答 (導入因果強制鎖：點擊後顯示)"""
     try:
         text = line
         q_am = text
@@ -257,17 +261,22 @@ def render_qa(line, prefix):
             if ch_hint:
                 st.caption(f"中文提示：{ch_hint}")
             
+        st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="請在此作答（作答後點擊下方按鈕即可查看解答）...")
+        
         if ans or ana:
-            if st.toggle("💡 顯示參考解答", key=f"t_{prefix}"):
+            if st.button("💡 送出作答並查看解答", key=f"btn_qa_{prefix}"):
+                st.session_state[f"show_qa_{prefix}"] = True
+                
+            if st.session_state.get(f"show_qa_{prefix}", False):
                 msg = ""
-                if ans: msg += f"參考解答：{ans}"
-                if ana: msg += f"\n\n分析：{ana}"
+                if ans: msg += f"**參考解答：** {ans}"
+                if ana: msg += f"\n\n**分析：** {ana}"
                 st.success(msg)
     except:
         st.info(line)
 
 def render_picture(line, prefix):
-    """渲染看圖表達，並支援動態載入對應題號圖片"""
+    """渲染看圖表達，並支援動態載入對應題號圖片 (導入因果強制鎖：點擊後顯示)"""
     try:
         text = line
         pic = text
@@ -321,19 +330,22 @@ def render_picture(line, prefix):
         if hint:
             st.caption(f"中文提示：{hint}")
             
-        st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="可以在此輸入您的口說草稿...")
+        st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="可以在此輸入您的口說草稿（作答後點擊下方按鈕查看解答）...")
             
         if ans or ana:
-            if st.toggle("💡 顯示作答參考", key=f"t_{prefix}"):
+            if st.button("💡 送出作答並查看作答參考", key=f"btn_pic_{prefix}"):
+                st.session_state[f"show_pic_{prefix}"] = True
+                
+            if st.session_state.get(f"show_pic_{prefix}", False):
                 msg = ""
-                if ans: msg += f"作答參考：{ans}"
-                if ana: msg += f"\n\n重點：{ana}"
+                if ans: msg += f"**作答參考：** {ans}"
+                if ana: msg += f"\n\n**重點：** {ana}"
                 st.success(msg)
     except:
         st.info(line)
 
 def render_dictation(line, prefix):
-    """渲染句子聽寫"""
+    """渲染句子聽寫 (導入因果強制鎖：點擊後顯示)"""
     try:
         text = line
         am = text
@@ -352,16 +364,17 @@ def render_dictation(line, prefix):
             else:
                 ch = text.strip()
         
-        st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="請在此輸入您聽寫的句子...")
+        st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="請在此輸入您聽寫的句子（作答後點擊下方按鈕查看解答）...")
         
-        if st.toggle("👁️ 顯示聽寫原文", key=f"t_show_dict_{prefix}"):
-            st.markdown(f"✍️ **{am}**")
-
-        if ch or ana:
-            if st.toggle("💡 顯示翻譯與分析", key=f"t_{prefix}"):
+        if st.button("👁️ 送出作答並查看原文與翻譯", key=f"btn_dic_{prefix}"):
+            st.session_state[f"show_dic_{prefix}"] = True
+            
+        if st.session_state.get(f"show_dic_{prefix}", False):
+            st.markdown(f"✍️ **原文：** {am}")
+            if ch or ana:
                 msg = ""
-                if ch: msg += f"中文：{ch}"
-                if ana: msg += f"\n\n分析：{ana}"
+                if ch: msg += f"**中文：** {ch}"
+                if ana: msg += f"\n\n**分析：** {ana}"
                 st.success(msg)
     except:
         st.info(line)
