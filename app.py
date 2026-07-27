@@ -47,7 +47,7 @@ QUIZ_DATA = [
 ]
 
 # ==========================================
-# 🧠 動態解析引擎：終極全域掃描版 (去除快取、多重路徑偵測)
+# 🧠 動態解析引擎：終極全域掃描版 (完美抓蟲版)
 # ==========================================
 def load_question_bank():
     possible_filenames = [
@@ -105,28 +105,32 @@ def load_question_bank():
             elif "選擇題（語言結構）" in line: current_section = "語言結構"
             elif "八、句子聽寫" in line: current_section = "句子聽寫"
             elif "九、問答" in line: current_section = "問答"
-            # 🌟 關鍵 Bug 修正處：將 line.isdigit() 改成 line.isdigit() 確保能抓到「1. 請問...」
+            # 🌟 關鍵修復：line.isdigit() 只檢查第一個字元是否為數字，完美相容您的題庫格式！
             elif current_section and line.isdigit() and ("." in line[:4] or "、" in line[:4]):
                 db[current_section].append(line)
     return db
 
 # ==========================================
-# 🎨 UI 元件渲染邏輯
+# 🎨 UI 元件渲染邏輯 (已全面強化字串切割穩定性)
 # ==========================================
 def render_mcq(line, prefix):
     """渲染選擇題 (自動切分選項與解答)"""
     try:
         q_part = line.split("(A)")
-        opts_str = line.split("(A)").split("答案：")
-        ans_part = line.split("答案：").split("分析：").strip("。 ")
-        ana_part = line.split("分析：") if "分析：" in line else "無"
+        rest = line.split("(A)")
+        
+        opts_part = rest.split("答案：")
+        ans_ana_part = rest.split("答案：") if "答案：" in rest else ""
+        
+        ans_part = ans_ana_part.split("。分析：").strip("。 ") if "。分析：" in ans_ana_part else ans_ana_part.split("分析：").strip("。 ")
+        ana_part = ans_ana_part.split("分析：") if "分析：" in ans_ana_part else "無"
 
         st.markdown(f"**{q_part.strip()}**")
         
-        o_a = "(A)" + opts_str.split("(B)")
-        o_b = "(B)" + opts_str.split("(B)").split("(C)")
-        o_c = "(C)" + opts_str.split("(C)").split("(D)")
-        o_d = "(D)" + opts_str.split("(D)")
+        o_a = "(A)" + opts_part.split("(B)")
+        o_b = "(B)" + opts_part.split("(B)").split("(C)")
+        o_c = "(C)" + opts_part.split("(C)").split("(D)")
+        o_d = "(D)" + opts_part.split("(D)")
 
         opts = [o_a.strip(), o_b.strip(), o_c.strip(), o_d.strip()]
         user_ans = st.radio("請選擇：", opts, index=None, key=prefix)
@@ -135,7 +139,7 @@ def render_mcq(line, prefix):
                 st.success(f"✅ 正確！分析：{ana_part}")
             else:
                 st.error(f"❌ 錯誤。正確答案：{ans_part}。分析：{ana_part}")
-    except:
+    except Exception as e:
         st.info(line) 
 
 def render_reading(line, prefix):
@@ -156,7 +160,7 @@ def render_qa(line, prefix):
             title_part = line.split("題目：") if "題目：" in line else line
             q_am = title_part.split("中文：")
             ch_part = line.split("中文：").split("參考回答：")
-            ans_part = line.split("參考回答：").split("分析：")
+            ans_part = line.split("參考回答：").split("分析：") if "參考回答：" in line else ""
             ana_part = line.split("分析：") if "分析：" in line else ""
             
             st.markdown(f"🗣️ **{q_am.strip()}**")
@@ -171,11 +175,16 @@ def render_qa(line, prefix):
 def render_picture(line, prefix):
     """渲染看圖表達"""
     try:
-        pic = line.split("圖片情境：").split("中文提示：") if "中文提示：" in line else line.split("圖片情境：").split("作答參考：")
-        ans = line.split("作答參考：").split("重點")
-        st.markdown(f"🖼️ **圖片情境：** {pic.strip()}")
+        pic_part = line.split("圖片情境：").split("中文提示：") if "中文提示：" in line else line.split("圖片情境：").split("作答參考：")
+        hint_part = line.split("中文提示：").split("作答參考：") if "中文提示：" in line else ""
+        ans_part = line.split("作答參考：").split("重點") if "作答參考：" in line else ""
+        ana_part = line.split("重點") if "重點" in line else ""
+        
+        st.markdown(f"🖼️ **圖片情境：** {pic_part.strip()}")
+        if hint_part:
+            st.caption(f"中文提示：{hint_part.strip()}")
         if st.toggle("顯示作答參考", key=f"t_{prefix}"):
-            st.success(f"作答參考：{ans.strip()}")
+            st.success(f"作答參考：{ans_part.strip()}" + (f"\n\n重點：{ana_part.strip()}" if ana_part else ""))
     except:
         st.info(line)
 
@@ -184,7 +193,7 @@ def render_dictation(line, prefix):
     try:
         am = line.split("中文：").replace("阿美語：", "")
         ch = line.split("中文：").split("分析：")
-        ana = line.split("分析：")
+        ana = line.split("分析：") if "分析：" in line else ""
         st.markdown(f"✍️ **{am.strip()}**")
         if st.toggle("顯示翻譯與分析", key=f"t_{prefix}"):
             st.success(f"中文：{ch.strip()}\n\n分析：{ana.strip()}")
@@ -227,17 +236,16 @@ def main():
     st.markdown("""
     <style>
     .quiz-card {
-        background-color: #F8F9FA;
+        background-color: var(--secondary-background-color);
         padding: 24px;
-        border-radius: 8px;
-        border: 1px solid #E9ECEF;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        border-radius: 16px;
+        border: 1px solid rgba(128, 128, 128, 0.2);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         margin-top: 15px;
         margin-bottom: 25px;
         transition: all 0.3s ease;
-        color: #343A40;
     }
-    hr { border-top: 1px solid #E9ECEF; }
+    hr { border-top: 1px solid rgba(128, 128, 128, 0.2); }
     </style>
     """, unsafe_allow_html=True)
 
