@@ -4,8 +4,8 @@ import json
 import os
 import re
 
-# 🚀 全域系統版本號 (更新為阿美族風格版)
-APP_VERSION = "v2.1.5 (Build 20260727 - Pangcah Style Update)"
+# 🚀 全域系統版本號
+APP_VERSION = "v2.1.5 (Build 20260727 - Indigenous Style)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -101,7 +101,8 @@ def load_question_bank():
                 db[current_section].append(q_text)
             current_question.clear()
 
-    for line in target_content.split("\n"):
+    for line in target_content.split("
+"):
         line = line.strip()
         # 遇到空行代表題目結束，存入題庫
         if not line:
@@ -186,7 +187,9 @@ def render_mcq(line, prefix):
         if st.toggle("💡 顯示解答與分析", key=f"t_ans_{prefix}"):
             if ans_str:
                 msg = f"**正確答案：** {ans_str}"
-                if ana_str: msg += f"\n\n**分析：** {ana_str}"
+                if ana_str: msg += f"
+
+**分析：** {ana_str}"
                 st.success(msg)
             else:
                 st.warning("無標準答案。")
@@ -268,7 +271,9 @@ def render_qa(line, prefix):
             if st.toggle("💡 顯示參考解答", key=f"t_{prefix}"):
                 msg = ""
                 if ans: msg += f"參考解答：{ans}"
-                if ana: msg += f"\n\n分析：{ana}"
+                if ana: msg += f"
+
+分析：{ana}"
                 st.success(msg)
     except:
         st.info(line)
@@ -337,7 +342,9 @@ def render_picture(line, prefix):
             if st.toggle("💡 顯示作答參考", key=f"t_{prefix}"):
                 msg = ""
                 if ans: msg += f"作答參考：{ans}"
-                if ana: msg += f"\n\n重點：{ana}"
+                if ana: msg += f"
+
+重點：{ana}"
                 st.success(msg)
     except:
         st.info(line)
@@ -373,7 +380,9 @@ def render_dictation(line, prefix):
             if st.toggle("💡 顯示翻譯與分析", key=f"t_{prefix}"):
                 msg = ""
                 if ch: msg += f"中文：{ch}"
-                if ana: msg += f"\n\n分析：{ana}"
+                if ana: msg += f"
+
+分析：{ana}"
                 st.success(msg)
     except:
         st.info(line)
@@ -404,57 +413,80 @@ def render_section(section_name, db):
 # 🚀 應用程式主邏輯 (Main)
 # ==========================================
 def main():
-    st.set_page_config(page_title="Pangcah 中高級認證", page_icon="🌺", layout="centered", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="中高級認證", page_icon="🎓", layout="centered", initial_sidebar_state="collapsed")
 
-    # 阿美族傳統編織與熱情紅黑風格 (Amis Traditional Weave & Passionate Red-Black Style) CSS
+    # 🌺 原住民文化風格佈景主題 CSS (完美適應 Light / Dark 模式)
     st.markdown("""
     <style>
-    /* 整體背景色帶點大地溫暖感 */
-    .stApp {
-        background-color: #FAF8F5;
-    }
+    /* 核心原住民風格設計：大地色系、陶紅、琉璃珠綠、織布幾何線條邊框與雙模式適應 */
     
-    /* 測驗卡片設計：融合阿美族的紅、黑、白三色元素 */
     .quiz-card {
-        background-color: #FFFFFF;
         padding: 24px;
-        border-radius: 8px;
-        border: 1px solid #EBE4D8;
-        border-left: 8px solid #C91A22; /* 阿美族熱情紅 */
-        border-right: 8px solid #1A1A1A; /* 阿美族沉穩黑 */
-        box-shadow: 0 4px 12px rgba(201, 26, 34, 0.08);
+        border-radius: 12px;
         margin-top: 15px;
         margin-bottom: 25px;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        color: #2D2D2D;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border-left: 6px solid #C85A32; /* 經典陶紅邊條裝飾 */
     }
-    
-    .quiz-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(201, 26, 34, 0.15);
+
+    /* 💡 Light 模式風格 */
+    @media (prefers-color-scheme: light) {
+        .quiz-card {
+            background-color: #FAF6F0; /* 暖米色羊皮紙底 */
+            border: 1px solid #E3D5C6;
+            border-left: 6px solid #C85A32;
+            color: #2C221E;
+        }
     }
-    
-    /* 分隔線改為傳統意象的紅色虛線 */
-    hr { 
-        border-top: 2px dashed #C91A22; 
-        opacity: 0.6;
+
+    /* 🌙 Dark 模式風格 */
+    @media (prefers-color-scheme: dark) {
+        .quiz-card {
+            background-color: #1F1B18; /* 深色大地黑灰 */
+            border: 1px solid #3D322C;
+            border-left: 6px solid #E2725B;
+            color: #F4EBE1;
+        }
     }
-    
-    /* 標題文字顏色微調 */
+
+    /* Streamlit 自動適應類別相容支援 */
+    [data-theme="light"] .quiz-card {
+        background-color: #FAF6F0;
+        border: 1px solid #E3D5C6;
+        border-left: 6px solid #C85A32;
+        color: #2C221E;
+    }
+
+    [data-theme="dark"] .quiz-card {
+        background-color: #1F1B18;
+        border: 1px solid #3D322C;
+        border-left: 6px solid #E2725B;
+        color: #F4EBE1;
+    }
+
+    /* 標題與裝飾線條優化 */
     h1, h2, h3 {
-        color: #1A1A1A !important;
-        font-weight: 700 !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        letter-spacing: 0.5px;
+    }
+
+    hr { 
+        border-top: 2px dashed #C85A32; 
+        opacity: 0.4;
+        margin: 25px 0;
     }
     
-    /* 選擇器標籤文字顏色 */
-    .st-bb {
-        color: #C91A22;
+    /* 按鈕與互動元件微調 */
+    .stButton > button {
+        border-radius: 8px;
+        font-weight: 600;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    st.title("🌺 Pangcah 中高級認證")
-    st.caption("[請選擇練習平台 - O pinanaman to sowal no Pangcah]")
+    st.title("🎓 中高級認證")
+    st.caption("[請選擇練習平台]")
 
     main_options = ["📋 認證考試說明", "🎧 聽力", "🗣️ 口說", "📖 閱讀", "✍️ 寫作"]
     current_tab = st.segmented_control("主選單導覽", main_options, default=None, label_visibility="collapsed")
@@ -472,10 +504,9 @@ def main():
     db = load_question_bank()
 
     if current_tab == "📋 認證考試說明":
-        # 🌟 更新這裡：加入您提供的超連結
         st.subheader("📋 [認證考試說明](https://lokahsu.ilrdf.org.tw/web_lokahsu/Files/Guide/1_20251211_162558.pdf)")
         st.divider()
-        st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫。\n\nNga'ay ho! 歡迎來到阿美語學習殿堂。")
+        st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫。")
 
     elif current_tab == "🎧 聽力":
         st.subheader("🎧 聽力測驗 (pitengil)")
@@ -483,6 +514,8 @@ def main():
         listening_sub = st.radio("題型選擇：", ["選擇題-聽音選詞", "選擇題-對話理解"], horizontal=True)
         if listening_sub == "選擇題-聽音選詞":
             render_section("聽音選詞", db)
+        elif listening_sub == "選擇題-對話語言": # 這裡保持原樣
+            render_section("對話理解", db)
         elif listening_sub == "選擇題-對話理解":
             render_section("對話理解", db)
 
@@ -516,10 +549,7 @@ def main():
             render_section("問答", db)
 
     st.write("---")
-    st.caption(f"© 2026 中高級認證 App 三一開發團隊 ｜ 系統版本： **{APP_VERSION}** ｜ Aray! 感謝您的使用。")
+    st.caption(f"© 2026 中高級認證 App 三一開發團隊 ｜ 系統版本： **{APP_VERSION}** ")
 
 if __name__ == "__main__":
     main()
-
-
-
