@@ -1,4 +1,4 @@
-code_content = """import streamlit as st
+import streamlit as st
 import random
 import json
 import os
@@ -547,10 +547,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-"""
-
-with open("european_court_style_app.py", "w", encoding="utf-8") as f:
-    f.write(code_content)
-with open("european_court_style_app.txt", "w", encoding="utf-8") as f:
-    f.write(code_content)
-print("Files successfully generated.")
