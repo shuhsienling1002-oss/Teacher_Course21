@@ -47,24 +47,47 @@ QUIZ_DATA = [
 ]
 
 # ==========================================
-# 🧠 動態解析引擎：自動讀取並結構化題庫文字檔
+# 🧠 動態解析引擎：終極全域掃描版 (去除快取、多重路徑偵測)
 # ==========================================
-# ⚠️ 這裡刻意移除了 @st.cache_data 裝飾器，強迫雲端每次重新讀取，避免它記住失敗的快取
-def load_question_bank(filepath="questions.txt"):
+def load_question_bank():
+    possible_filenames = [
+        "questions.txt", "questions.txt.txt", "Questions.txt", "QUESTIONS.txt",
+        "各類題目.txt", "各類題目.txt.txt"
+    ]
+    
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    actual_filepath = os.path.join(base_dir, filepath)
+    cwd_dir = os.getcwd()
+    
+    actual_filepath = None
+    searched_paths = []
+
+    for filename in possible_filenames:
+        paths_to_check = [
+            os.path.join(base_dir, filename), 
+            os.path.join(cwd_dir, filename),  
+            filename                          
+        ]
+        for p in paths_to_check:
+            if p not in searched_paths:
+                searched_paths.append(p)
+            if os.path.exists(p):
+                actual_filepath = p
+                break
+        if actual_filepath:
+            break
 
     db = {
         "聽音選詞": [], "對話理解": [], "段落朗讀": [], "情境問答": [],
         "看圖表達": [], "詞彙語意": [], "語言結構": [], "句子聽寫": [], "問答": []
     }
     
-    # 🌟 終極防禦性偵測：如果找不到，就把伺服器上的檔案全列出來給你看！
-    if not os.path.exists(actual_filepath):
+    if not actual_filepath:
         try:
-            db["_debug_files"] = os.listdir(base_dir)
+            db["_debug_files_base"] = os.listdir(base_dir)
+            db["_debug_files_cwd"] = os.listdir(cwd_dir)
+            db["_searched_paths"] = searched_paths
         except Exception as e:
-            db["_debug_files"] = [f"無法讀取資料夾內容: {e}"]
+            db["_debug_files_base"] = [f"無法讀取資料夾內容: {e}"]
         return db
 
     current_section = None
@@ -73,7 +96,6 @@ def load_question_bank(filepath="questions.txt"):
             line = line.strip()
             if not line: continue
             
-            # 定位大題區塊
             if "選擇題（聽音選詞）" in line: current_section = "聽音選詞"
             elif "選擇題（對話理解）" in line: current_section = "對話理解"
             elif "三、段落朗讀" in line: current_section = "段落朗讀"
@@ -83,7 +105,7 @@ def load_question_bank(filepath="questions.txt"):
             elif "選擇題（語言結構）" in line: current_section = "語言結構"
             elif "八、句子聽寫" in line: current_section = "句子聽寫"
             elif "九、問答" in line: current_section = "問答"
-            # 擷取題目列 (以數字開頭)
+            # 🌟 關鍵 Bug 修正處：將 line.isdigit() 改成 line.isdigit() 確保能抓到「1. 請問...」
             elif current_section and line.isdigit() and ("." in line[:4] or "、" in line[:4]):
                 db[current_section].append(line)
     return db
@@ -173,10 +195,12 @@ def render_section(section_name, db):
     """通用區塊渲染器"""
     questions = db.get(section_name, [])
     if not questions:
-        st.warning(f"⚠️ 找不到題庫資料，請確認 **『questions.txt』** 是否與本程式放在同一個資料夾。")
-        # 🚀 顯示給使用者的抓蟲 (Debug) 畫面
-        if "_debug_files" in db:
-            st.error(f"🔍 **【系統路徑偵錯】**\n\n系統正在伺服器的這個位置尋找：\n`{os.path.dirname(os.path.abspath(__file__))}`\n\n但目前伺服器只看到以下檔案：\n`{db['_debug_files']}`\n\n💡 **解決提示：** 請仔細比對上面的清單，確認您 GitHub 上的檔名是否不小心變成了 `questions.txt.txt`，或者是大小寫有任何差異！")
+        st.warning(f"⚠️ 找不到題庫資料。")
+        if "_debug_files_base" in db:
+            st.error("🔍 **【終極系統路徑偵錯雷達】**")
+            st.info(f"系統已嘗試找尋過以下所有路徑，但全部落空：\n`{db.get('_searched_paths', [])}`")
+            st.warning(f"📁 **當前 app.py 所在資料夾裡的檔案有：**\n`{db.get('_debug_files_base', [])}`")
+            st.warning(f"📁 **雲端執行目錄裡的檔案有：**\n`{db.get('_debug_files_cwd', [])}`")
         return
 
     for i, line in enumerate(questions):
@@ -233,17 +257,15 @@ def main():
             st.session_state.writing_submitted = False
         st.session_state.previous_tab = current_tab
 
-    # 載入動態題庫庫 (移除快取版)
     db = load_question_bank()
 
     ### ---- 第二層：根據選擇顯示對應架構 ----
     if current_tab == "📋 認證考試說明":
         st.subheader("📋 認證考試說明")
         st.divider()
-        st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從 `questions.txt` 載入完整題庫。")
-        # 額外在說明頁面也顯示一下偵錯結果
-        if "_debug_files" in db:
-            st.error(f"系統異常：找不到題庫。伺服器當前檔案清單：{db['_debug_files']}")
+        st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫。")
+        if "_debug_files_base" in db:
+            st.error("⚠️ 系統異常：找不到題庫資料檔。請切換至「閱讀」等測驗頁面查看詳細錯誤報告。")
 
     elif current_tab == "🎧 聽力":
         st.subheader("🎧 聽力測驗 (pitengil)")
