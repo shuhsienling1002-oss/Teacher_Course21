@@ -5,7 +5,7 @@ import os
 import re
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.1.4 (Build 20260727 - Kawaii Manga Edition ✨)"
+APP_VERSION = "v2.1.4 (Build 20260727 - Lazy Boho Edition)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -28,7 +28,7 @@ def show_quiz_mode():
 def show_debug_info(): 
     pass
 
-# 原始聽力題庫 (15題標準數據庫，完全保留)
+# 原始聽力題庫 (完全保留)
 QUIZ_DATA = [
     {"id": 1, "audio_path": "assets/audio/01_listening/listening_words/tengil-a1-01.mp3", "question_text": "聆聽音檔，選出關聯的詞彙：", "options": ["riyar", "'alo", "fanaw", "sa'owac"], "correct_text": "riyar"},
     {"id": 2, "audio_path": "assets/audio/01_listening/listening_words/tengil-a1-02.mp3", "question_text": "聆聽音檔，選出關聯的詞彙：", "options": ["korkor", "rohayan", "romakat", "rotarot"], "correct_text": "romakat"},
@@ -48,7 +48,7 @@ QUIZ_DATA = [
 ]
 
 # ==========================================
-# 🧠 動態解析引擎：跨行讀取與穩定分割版
+# 🧠 動態解析引擎 (保留原始邏輯)
 # ==========================================
 def load_question_bank():
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -90,7 +90,6 @@ def load_question_bank():
     if not file_loaded:
         return db
 
-    # 使用緩衝區將跨行的題目合併為單一字串
     current_section = None
     current_question = []
 
@@ -103,12 +102,10 @@ def load_question_bank():
 
     for line in target_content.split("\n"):
         line = line.strip()
-        # 遇到空行代表題目結束，存入題庫
         if not line:
             save_question()
             continue
             
-        # 判斷是否為題型切換標題
         if "一、選擇題（聽音選詞）" in line: save_question(); current_section = "聽音選詞"
         elif "二、選擇題（對話理解）" in line: save_question(); current_section = "對話理解"
         elif "三、段落朗讀" in line: save_question(); current_section = "段落朗讀"
@@ -119,30 +116,27 @@ def load_question_bank():
         elif "八、句子聽寫" in line: save_question(); current_section = "句子聽寫"
         elif "九、問答" in line: save_question(); current_section = "問答"
         
-        # 開頭為數字代表新題目的開始
         elif re.match(r'^\d+[\.、]', line):
             save_question()
             current_question.append(line)
-        # 屬於目前題目的後續內容（選項或答案）
         else:
             if current_question:
                 current_question.append(line)
                 
-    save_question() # 儲存最後一題
+    save_question() 
             
     return db
 
 # ==========================================
-# 🎨 終極 UI 渲染邏輯 (可愛漫畫風格 Kawaii Style)
+# 🎨 UI 渲染邏輯 (保留邏輯，僅微調 Icon 以配合風格)
 # ==========================================
 def render_mcq(line, prefix):
-    """渲染選擇題 (修復 split 回傳 list 的問題，並新增聽力題目隱藏功能)"""
+    """渲染選擇題"""
     try:
         if "(A)" not in line:
             st.info(line)
             return
 
-        # 限制分割次數，並明確取值
         parts = line.split("(A)", 1)
         q_part = parts[0].strip()
         rest = "(A)" + parts[1]
@@ -163,15 +157,13 @@ def render_mcq(line, prefix):
             else:
                 ans_str = ans_ana.strip("。 ")
 
-        # 🌟 聽力測驗專屬：隱藏題目文字功能
         is_listening = "聽音選詞" in prefix or "對話理解" in prefix
         if is_listening:
-            if st.toggle("👁️ 顯示題目文字", key=f"t_show_q_{prefix}"):
+            if st.toggle("🌙 顯示題目文字", key=f"t_show_q_{prefix}"):
                 st.markdown(f"**{q_part}**")
         else:
             st.markdown(f"**{q_part}**")
         
-        # 安全切割四個選項
         opts = []
         for tag in ["(A)", "(B)", "(C)", "(D)"]:
             if tag in opts_str:
@@ -181,20 +173,21 @@ def render_mcq(line, prefix):
                         opt_text = opt_text.split(next_tag, 1)[0]
                 opts.append(tag + " " + opt_text.strip())
 
-        user_ans = st.radio("✨ 請選擇正確答案：", opts, index=None, key=prefix)
+        # 慵懶風不強迫回答，index=None 很棒
+        user_ans = st.radio("✨ 請選擇：", opts, index=None, key=prefix)
         
-        if st.toggle("💡 顯示解答與分析", key=f"t_ans_{prefix}"):
+        if st.toggle("💡 解答", key=f"t_ans_{prefix}"):
             if ans_str:
-                msg = f"**🎉 正確答案：** {ans_str}"
-                if ana_str: msg += f"\n\n🔍 **詳盡解析：** {ana_str}"
+                msg = f"**正確答案：** {ans_str}"
+                if ana_str: msg += f"\n\n**分析：** {ana_str}"
                 st.success(msg)
             else:
-                st.warning("🐾 暫無標準答案～")
+                st.warning("無標準答案。")
         elif user_ans and ans_str:
             if ans_str in user_ans:
-                st.success(f"🎉 答對了！太厲害啦！" + (f"\n\n🔍 **解析：**{ana_str}" if ana_str else ""))
+                st.success(f"🌻 正確！" + (f"分析：{ana_str}" if ana_str else ""))
             else:
-                st.error(f"❌ 差一點點！加油！正確答案是：**{ans_str}**。" + (f"\n\n🔍 **解析：**{ana_str}" if ana_str else ""))
+                st.error(f"☁️ 錯誤。正確答案：{ans_str}。" + (f"分析：{ana_str}" if ana_str else ""))
     except Exception as e:
         st.info(line) 
 
@@ -214,8 +207,8 @@ def render_reading(line, prefix):
         
         st.markdown(f"📖 **{q_part}**")
         if ch_part:
-            if st.toggle("💡 顯示中文翻譯", key=f"t_{prefix}"):
-                st.success(f"🌸 **中文翻譯：** {ch_part}")
+            if st.toggle("🍃 中文翻譯", key=f"t_{prefix}"):
+                st.success(ch_part)
     except:
         st.info(line)
 
@@ -252,29 +245,28 @@ def render_qa(line, prefix):
         
         q_am = q_am.replace("題目：", " 題目：")
         
-        # 🌟 口說測驗-情境問答專屬：隱藏題目與提示功能
         is_situational = "情境問答" in prefix
         if is_situational:
-            if st.toggle("👁️ 顯示題目與提示", key=f"t_show_q_{prefix}"):
+            if st.toggle("🌙 顯示題目與提示", key=f"t_show_q_{prefix}"):
                 st.markdown(f"🗣️ **{q_am}**")
                 if ch_hint:
-                    st.caption(f"💭 中文提示：{ch_hint}")
+                    st.caption(f"中文提示：{ch_hint}")
         else:
             st.markdown(f"🗣️ **{q_am}**")
             if ch_hint:
-                st.caption(f"💭 中文提示：{ch_hint}")
+                st.caption(f"中文提示：{ch_hint}")
             
         if ans or ana:
-            if st.toggle("💡 顯示參考解答", key=f"t_{prefix}"):
+            if st.toggle("💡 參考解答", key=f"t_{prefix}"):
                 msg = ""
-                if ans: msg += f"✨ **參考解答：** {ans}"
-                if ana: msg += f"\n\n🔍 **重點解析：** {ana}"
+                if ans: msg += f"參考解答：{ans}"
+                if ana: msg += f"\n\n分析：{ana}"
                 st.success(msg)
     except:
         st.info(line)
 
 def render_picture(line, prefix):
-    """渲染看圖表達，並支援動態載入對應題號圖片"""
+    """渲染看圖表達"""
     try:
         text = line
         pic = text
@@ -309,9 +301,7 @@ def render_picture(line, prefix):
             else:
                 hint = hint_part.strip()
         
-        # 🌟 動態讀取對應圖片邏輯 (假設 prefix 格式為 "看圖表達_0")
         try:
-            # 從 prefix 中解析題號 (index + 1)
             idx = int(prefix.split('_')[-1]) + 1
             img_path_jpg = f"assets/images/picture_{idx}.jpg"
             img_path_png = f"assets/images/picture_{idx}.png"
@@ -321,23 +311,23 @@ def render_picture(line, prefix):
             elif os.path.exists(img_path_png):
                 st.image(img_path_png, use_container_width=True)
             else:
-                st.info(f"🖼️ **圖片佔位區：** 若要顯示圖片，請將圖片命名為 `picture_{idx}.jpg` 或 `.png`，並放置於 `assets/images/` 資料夾中。")
+                # 佔位區也溫柔一點
+                st.caption(f"🎨 [ 圖片預留區：picture_{idx}.jpg ]")
         except:
-            pass # 若解析題號失敗則安全跳過
+            pass
 
         st.markdown(f"🖼️ **圖片情境：** {pic}")
         
         if hint:
-            st.caption(f"💭 中文提示：{hint}")
+            st.caption(f"中文提示：{hint}")
             
-        # 加入輸入框作為草稿區
-        st.text_area("✍️ 練練看筆記區：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="可以在此輸入您的口說練習草稿唷...")
+        st.text_area("✍️ 筆記 / 草稿：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="可以在此輸入您的口說草稿...")
             
         if ans or ana:
-            if st.toggle("💡 顯示作答參考", key=f"t_{prefix}"):
+            if st.toggle("💡 作答參考", key=f"t_{prefix}"):
                 msg = ""
-                if ans: msg += f"✨ **作答參考：** {ans}"
-                if ana: msg += f"\n\n🔍 **重點說明：** {ana}"
+                if ans: msg += f"作答參考：{ans}"
+                if ana: msg += f"\n\n重點：{ana}"
                 st.success(msg)
     except:
         st.info(line)
@@ -362,31 +352,30 @@ def render_dictation(line, prefix):
             else:
                 ch = text.strip()
         
-        # 加入作答的文字輸入框，模擬真實寫作情境
-        st.text_area("✍️ 聽寫作答區：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="請在此輸入您聽到的句子答案...")
+        st.text_area("✍️ 聽寫作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="請在此輸入您聽寫的句子...")
         
-        # 🌟 寫作測驗專屬：隱藏聽寫原文功能
-        if st.toggle("👁️ 顯示聽寫原文", key=f"t_show_dict_{prefix}"):
-            st.markdown(f"✍️ **{am}**")
+        if st.toggle("🌙 顯示聽寫原文", key=f"t_show_dict_{prefix}"):
+            st.markdown(f"🖋️ **{am}**")
             
         if ch or ana:
-            if st.toggle("💡 顯示翻譯與分析", key=f"t_{prefix}"):
+            if st.toggle("💡 翻譯與分析", key=f"t_{prefix}"):
                 msg = ""
-                if ch: msg += f"🌸 **中文意涵：** {ch}"
-                if ana: msg += f"\n\n🔍 **詳細解析：** {ana}"
+                if ch: msg += f"中文：{ch}"
+                if ana: msg += f"\n\n分析：{ana}"
                 st.success(msg)
     except:
         st.info(line)
 
 def render_section(section_name, db):
-    """通用區塊渲染器"""
+    """通用區塊渲染器 (保留)"""
     questions = db.get(section_name, [])
     if not questions:
-        st.warning(f"🐾 叮咚！系統暫時找不到【{section_name}】的資料庫內容～")
+        st.warning(f"⚠️ 找不到【{section_name}】的資料。")
         return
 
     for i, line in enumerate(questions):
         with st.container():
+            # HTML 結構保留，透過 CSS 改變外觀
             st.markdown('<div class="quiz-card">', unsafe_allow_html=True)
             if "聽音選詞" in section_name or "對話理解" in section_name or section_name in ["詞彙語意", "語言結構"]:
                 render_mcq(line, f"{section_name}_{i}")
@@ -404,130 +393,98 @@ def render_section(section_name, db):
 # 🚀 應用程式主邏輯 (Main)
 # ==========================================
 def main():
-    st.set_page_config(page_title="中高級認證 ‧ 萌萌學習寶典 ✨", page_icon="🎀", layout="centered", initial_sidebar_state="collapsed")
+    # 修改 Page Icon 為更慵懶的符號
+    st.set_page_config(page_title="中高級認證", page_icon="☕", layout="centered", initial_sidebar_state="collapsed")
 
-    # 🌸 可愛漫畫風格 (Kawaii Anime/Manga Style) CSS 造型設計
+    # ==========================================
+    # 🎨 慵懶 Boho 風格 (Lazy Boho / Cozy Style) CSS
+    # ==========================================
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Mamelon&family=Quicksand:wght@500;700&family=Zen+Maru+Gothic:wght@500;700;900&display=swap');
+    /* 引入 Google Fonts: Handlee (手寫感) 與 Noto Sans TC */
+    @import url('https://fonts.googleapis.com/css2?family=Handlee&family=Noto+Sans+TC:wght@400;500;700&display=swap');
 
-    /* 全局背景與字體設定 */
-    .stApp {
-        background-color: #FFF7F9;
-        font-family: 'Zen Maru Gothic', 'Quicksand', 'Microsoft JhengHei', sans-serif;
-        color: #4A3E4E;
+    /* 全域字體設定 */
+    html, body, [data-testid="stAppViewContainer"] {
+        font-family: 'Noto Sans TC', sans-serif;
+        background-color: #FDFCF5; /* 極淡的米奶油色背景 */
+        color: #5D5046; /* 柔和的深褐，代替純黑 */
     }
 
-    /* 可愛標題裝飾 */
-    h1 {
-        color: #FF6B8B !important;
-        text-shadow: 3px 3px 0px #FFD1DC;
-        font-weight: 900 !important;
-        text-align: center;
-        letter-spacing: 1px;
-        padding-bottom: 5px;
+    /* 標題設定 (h1, h2, h3) */
+    h1, h2, h3 {
+        font-family: 'Handlee', 'Noto Sans TC', cursive;
+        color: #8E735B; /* 暖咖啡色 */
+        font-weight: 400;
     }
 
-    h2, h3 {
-        color: #FF758C !important;
-        font-weight: 700 !important;
-    }
-
-    /* 可愛漫畫卡片樣式 (Comic Speech Card) */
+    /* 慵懶風題目卡片 */
     .quiz-card {
-        background-color: #FFFFFF;
-        padding: 24px;
-        border-radius: 20px;
-        border: 3.5px solid #FFC2D1;
-        box-shadow: 6px 6px 0px #FFD1DC;
+        background-color: #FFFFFF; /* 純白卡片 */
+        padding: 30px; /* 增加內距，更有呼吸感 */
+        border-radius: 20px; /* 超大圓角 */
+        border: 1px solid #F1E9D9; /* 極淡的暖色邊框 */
+        
+        /* 柔和擴散的陰影，營造漂浮感 */
+        box-shadow: 0 10px 25px rgba(142, 115, 91, 0.08); 
+        
         margin-top: 20px;
         margin-bottom: 30px;
-        transition: all 0.2s ease-in-out;
-        position: relative;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-
+    
+    /* 滑過卡片時有輕微互動 */
     .quiz-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 8px 8px 0px #FFB6C1;
-        border-color: #FF85A1;
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(142, 115, 91, 0.12);
     }
 
-    /* 分割線樣式 */
-    hr {
-        border: none;
-        border-top: 3px dashed #FFAAA5;
-        margin: 20px 0;
-    }
+    /* 修正 Streamlit 默認 hr 樣式 */
+    hr { border-top: 1px solid #F1E9D9; }
 
-    /* 可愛按鈕與選項設計 */
-    .stButton>button {
-        background-color: #FF85A1;
-        color: white !important;
-        font-weight: bold;
-        border-radius: 25px;
-        border: 2px solid #FF6B8B;
-        box-shadow: 0 4px 0 #D85772;
-        transition: all 0.1s ease;
+    /* 自定義 Radio Button 樣式 (粗略模擬 Boho 感) */
+    div[data-testid="stRadio"] > label {
+        color: #5D5046;
+        padding-bottom: 5px;
     }
     
-    .stButton>button:hover {
-        background-color: #FF6B8B;
-        transform: translateY(2px);
-        box-shadow: 0 2px 0 #D85772;
-    }
-
-    /* Toggle 開關樣式優化 */
-    div[data-testid="stToggle"] {
-        background-color: #FFF0F3;
-        padding: 6px 12px;
-        border-radius: 15px;
-        border: 1.5px dashed #FFB6C1;
-        margin-top: 8px;
-        margin-bottom: 8px;
-    }
-
-    /* 訊息提示框樣式 (Success, Warning, Info, Error) */
-    .stAlert {
-        border-radius: 18px !important;
-        border: 2px solid !important;
-        font-weight: bold !important;
-    }
-
-    /* Radio 選項包裝 */
-    div[role="radiogroup"] {
-        background-color: #FFF5F7;
-        padding: 12px;
-        border-radius: 16px;
-        border: 2px solid #FFE3E8;
-    }
-
-    /* 文字輸入框樣式 */
-    textarea, input {
+    /* 讓 Segmented Control (主選單) 也變圓潤 */
+    div[data-testid="stSegmentedControl"] button {
         border-radius: 15px !important;
-        border: 2px solid #FFC2D1 !important;
-        background-color: #FAFAFA !important;
+        border: 1px solid #F1E9D9 !important;
+        background-color: white !important;
+        color: #8E735B !important;
     }
-    textarea:focus, input:focus {
-        border-color: #FF85A1 !important;
-        box-shadow: 0 0 8px rgba(255, 133, 161, 0.4) !important;
+    div[data-testid="stSegmentedControl"] button[aria-selected="true"] {
+        background-color: #E6DCCF !important; /* 選取時變為暖沙色 */
+        color: #5D5046 !important;
+        border: 1px solid #E6DCCF !important;
     }
+
+    /* Input Box 與 Textarea 圓角 */
+    .stTextArea textarea, .stTextInput input {
+        border-radius: 15px !important;
+        border: 1px solid #F1E9D9 !important;
+        background-color: #FDFCF5 !important;
+    }
+
+    /* 隱藏預設的 Streamlit Header/Footer 以保持乾淨 */
+    header, footer {visibility: hidden;}
     
-    /* 頁尾標示 */
-    .kawaii-footer {
-        text-align: center;
-        color: #B5838D;
-        font-size: 0.9rem;
-        padding: 15px;
-        font-weight: bold;
+    /* 讓 Caption 更淡更柔和 */
+    .stCaption {
+        color: #A39689 !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    st.title("🎓 中高級認證 ‧ 學習大冒險 ✨")
-    st.caption("✨ 歡迎來到可愛漫畫風檢定教室～一起快樂學族語吧！🌸")
+    # 主標題使用預設 st.title，但 CSS 已將其改為 Handlee 字體
+    st.title("☕ 中高級認證練習")
+    st.caption("[ 找個舒服的位置，我們開始吧 ]")
 
-    main_options = ["📋 認證考試說明", "🎧 聽力", "🗣️ 口說", "📖 閱讀", "✍️ 寫作"]
-    current_tab = st.segmented_control("🌟 主選單導覽 🌟", main_options, default=None, label_visibility="collapsed")
+    main_options = ["📋 考試說明", "🎧 聽力", "🗣️ 口說", "📖 閱讀", "✍️ 寫作"]
+    # segmented_control 在 CSS 中已被美化
+    current_tab = st.segmented_control("主選單導覽", main_options, default=None, label_visibility="collapsed")
 
     if "previous_tab" not in st.session_state:
         st.session_state.previous_tab = None
@@ -541,24 +498,25 @@ def main():
 
     db = load_question_bank()
 
-    if current_tab == "📋 認證考試說明":
-        st.subheader("📋 [認證考試說明點我開啟 PDF 📄](https://lokahsu.ilrdf.org.tw/web_lokahsu/Files/Guide/1_20251211_162558.pdf)")
+    if current_tab == "📋 考試說明":
+        # Subheader 也會變成 Handlee 字體
+        st.subheader("🍂 [認證考試說明](https://lokahsu.ilrdf.org.tw/web_lokahsu/Files/Guide/1_20251211_162558.pdf)")
         st.divider()
-        st.info("💡 **可愛小提示：** 請點擊上方導覽按鈕選擇你想練習的測驗項目。系統會自動載入魔法題庫為你加油喔！✨")
+        st.info("請透過上方導覽列選擇項目。靜下心來練習，這不是考試，是一次學習的旅程。")
 
     elif current_tab == "🎧 聽力":
-        st.subheader("🎧 聽力測驗 ‧ 耳朵動一動 (pitengil)")
+        st.subheader("🎧 聽力測驗")
         st.divider()
-        listening_sub = st.radio("✨ 請選擇試題類型：", ["選擇題-聽音選詞", "選擇題-對話理解"], horizontal=True)
+        listening_sub = st.radio("題型：", ["選擇題-聽音選詞", "選擇題-對話理解"], horizontal=True)
         if listening_sub == "選擇題-聽音選詞":
             render_section("聽音選詞", db)
         elif listening_sub == "選擇題-對話理解":
             render_section("對話理解", db)
 
     elif current_tab == "🗣️ 口說":
-        st.subheader("🗣️ 口說測驗 ‧ 大聲說族語 (pisowal)")
+        st.subheader("🗣️ 口說測驗")
         st.divider()
-        speaking_sub = st.radio("✨ 請選擇試題類型：", ["段落朗讀", "情境問答", "看圖表達"], horizontal=True)
+        speaking_sub = st.radio("題型：", ["段落朗讀", "情境問答", "看圖表達"], horizontal=True)
         if speaking_sub == "段落朗讀":
             render_section("段落朗讀", db)
         elif speaking_sub == "情境問答":
@@ -567,25 +525,17 @@ def main():
             render_section("看圖表達", db)
 
     elif current_tab == "📖 閱讀":
-        st.subheader("📖 閱讀測驗 ‧ 智慧大躍進 (piasip)")
+        st.subheader("📖 閱讀測驗")
         st.divider()
-        reading_sub = st.radio("✨ 請選擇閱讀題型：", ["選擇題-詞彙語意", "選擇題-語言結構"], horizontal=True)
+        reading_sub = st.radio("題型：", ["選擇題-詞彙語意", "選擇題-語言結構"], horizontal=True)
         if reading_sub == "選擇題-詞彙語意":
             render_section("詞彙語意", db)
         elif reading_sub == "選擇題-語言結構":
             render_section("語言結構", db)
 
     elif current_tab == "✍️ 寫作":
-        st.subheader("✍️ 寫作測驗 ‧ 小小妙筆生花 (pitilid)")
-        st.divider()
-        writing_sub = st.radio("✨ 請選擇寫作題型：", ["句子聽寫", "問答"], horizontal=True)
-        if writing_sub == "句子聽寫":
-            render_section("句子聽寫", db)
-        elif writing_sub == "問答":
-            render_section("問答", db)
+        st.subheader("✍️ 寫作測驗這是一個專為中高級認證練習設計的慵懶風格版面。整體採用了溫暖的米色和奶油色調，搭配莫蘭迪色系的導覽按鈕（土耳其藍、橄欖綠、柔沙色），呈現出輕鬆、不費力的氛圍。
 
-    st.write("---")
-    st.markdown(f'<div class="kawaii-footer">🐾 © 2026 中高級認證 App 三一開發團隊 ｜ 系統版本：{APP_VERSION} 💕</div>', unsafe_allow_html=True)
+卡片設計擁有柔軟的圓角和擴散陰影，營造出一種舒適的浮動感。標題字體更具人情味，與原本冷硬的樣式形成對比。在聽力測驗的示範中，您可以看到圓形的選項設計和簡單的切換開關，非常適合放鬆地進行學習。
 
-if __name__ == "__main__":
-    main()
+如果您需要，我可以協助將現有的 CSS 樣式程式碼修改為這個版本，只需幾分鐘即可完成風格轉換。
