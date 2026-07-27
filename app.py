@@ -5,7 +5,7 @@ import os
 import re
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.1.1 (Build 20260727 - Dictation Hidden)"
+APP_VERSION = "v2.1.2 (Build 20260727 - Situational QA Hidden)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -252,9 +252,17 @@ def render_qa(line, prefix):
         
         q_am = q_am.replace("題目：", " 題目：")
         
-        st.markdown(f"🗣️ **{q_am}**")
-        if ch_hint:
-            st.caption(f"中文提示：{ch_hint}")
+        # 🌟 口說測驗-情境問答專屬：隱藏題目與提示功能
+        is_situational = "情境問答" in prefix
+        if is_situational:
+            if st.toggle("👁️ 顯示題目與提示", key=f"t_show_q_{prefix}"):
+                st.markdown(f"🗣️ **{q_am}**")
+                if ch_hint:
+                    st.caption(f"中文提示：{ch_hint}")
+        else:
+            st.markdown(f"🗣️ **{q_am}**")
+            if ch_hint:
+                st.caption(f"中文提示：{ch_hint}")
             
         if ans or ana:
             if st.toggle("💡 顯示參考解答", key=f"t_{prefix}"):
