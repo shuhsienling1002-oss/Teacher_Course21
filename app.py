@@ -8,156 +8,150 @@ from io import BytesIO
 # --- 0. 系統配置 ---
 st.set_page_config(
     page_title="阿美語 - 日子與天氣", 
-    page_icon="🌊", 
+    page_icon="❄️", 
     layout="centered", 
     initial_sidebar_state="collapsed"
 )
 
-# --- CSS 視覺魔法 (海洋沖浪活力風) ---
+# --- CSS 視覺魔法 (極簡北歐冷調風) ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Nunito:wght@700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Noto+Sans+TC:wght@300;400;500&display=swap');
 
-    /* 全局背景：海洋漸層與波浪感 */
+    /* 全局背景：冷灰白質感 */
     .stApp {
-        background-color: #E0F7FA;
-        background-image: linear-gradient(180deg, #E0F7FA 0%, #B2EBF2 100%);
-        font-family: 'Noto Sans TC', sans-serif;
-        color: #004D40;
+        background-color: #F4F6F9;
+        font-family: 'Inter', 'Noto Sans TC', sans-serif;
+        color: #2E3440;
     }
     
-    .block-container { padding-top: 2rem !important; padding-bottom: 5rem !important; }
+    .block-container { padding-top: 3rem !important; padding-bottom: 5rem !important; }
 
-    /* --- Header (衝浪板風格) --- */
+    /* --- Header (極簡質感) --- */
     .header-container {
-        background: linear-gradient(135deg, #00BCD4 0%, #0288D1 100%);
-        border: 3px solid #FFFFFF;
-        box-shadow: 0px 10px 20px rgba(0, 131, 143, 0.2);
-        border-radius: 30px 30px 60px 60px; /* 模擬衝浪板圓弧 */
-        padding: 30px;
+        background: #FFFFFF;
+        border: 1px solid #E5E9F0;
+        border-radius: 8px;
+        padding: 40px 30px;
         text-align: center;
         margin-bottom: 40px;
-        position: relative;
-        color: white;
-    }
-    
-    /* 模擬浪花裝飾 */
-    .header-container::before {
-        content: '〰️〰️〰️';
-        position: absolute;
-        top: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 20px;
-        opacity: 0.6;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
     }
     
     .main-title {
-        font-family: 'Nunito', sans-serif;
-        color: #FFFFFF;
-        font-size: 46px;
-        font-weight: 900;
+        font-family: 'Inter', sans-serif;
+        color: #3B4252;
+        font-size: 42px;
+        font-weight: 300;
+        letter-spacing: 6px;
         margin: 0;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-        letter-spacing: 2px;
+        text-transform: uppercase;
     }
     
     .sub-title { 
-        color: #E0F7FA; 
-        font-size: 20px; 
-        margin-top: 8px; 
-        font-weight: 500; 
+        color: #4C566A; 
+        font-size: 16px; 
+        margin-top: 12px; 
+        font-weight: 400; 
+        letter-spacing: 2px;
     }
     
     .teacher-tag {
         display: inline-block;
-        margin-top: 20px;
-        padding: 8px 20px;
-        background: #FFCA28; /* 陽光黃 */
-        color: #5D4037;
-        border-radius: 20px;
-        font-size: 14px;
-        font-weight: bold;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin-top: 25px;
+        padding: 6px 16px;
+        background: transparent;
+        color: #5E81AC;
+        border: 1px solid #5E81AC;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 1px;
     }
 
-    /* --- Cards (浮潛海洋泡泡風格) --- */
+    /* --- Cards (冷調方正卡片) --- */
     .word-card {
-        background: rgba(255, 255, 255, 0.9);
-        border-radius: 16px;
-        padding: 20px 10px;
+        background: #FFFFFF;
+        border-radius: 6px;
+        padding: 25px 15px;
         text-align: center;
-        border: 2px solid #FFFFFF;
-        border-bottom: 6px solid #00ACC1; /* 底部海洋色重點 */
+        border: 1px solid #ECEFF4;
+        border-top: 4px solid #81A1C1;
         height: 100%;
         margin-bottom: 15px;
-        box-shadow: 0 4px 10px rgba(0,188,212,0.15);
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
     
     .word-card h3 {
-        color: #006064 !important;
-        font-weight: 700;
+        color: #2E3440 !important;
+        font-weight: 600;
         margin: 0;
-        padding-bottom: 5px;
-        font-size: 19px;
+        padding-bottom: 8px;
+        font-size: 18px;
+        letter-spacing: 1px;
     }
 
     .word-card:hover { 
-        transform: translateY(-8px); 
-        box-shadow: 0 12px 20px rgba(0,188,212,0.3); 
-        border-bottom-color: #FFCA28; 
+        transform: translateY(-3px); 
+        box-shadow: 0 8px 16px rgba(0,0,0,0.06); 
+        border-top-color: #5E81AC; 
     }
 
-    .icon-box { font-size: 34px; margin-bottom: 8px; }
-    .zh-word { font-size: 15px; color: #607D8B; font-weight: 500; }
+    .icon-box { font-size: 28px; margin-bottom: 12px; filter: grayscale(30%); }
+    .zh-word { font-size: 14px; color: #4C566A; font-weight: 400; }
 
-    /* --- Sentences (海浪波紋風格) --- */
+    /* --- Sentences (冷冽線條) --- */
     .sentence-box {
-        background: rgba(255, 255, 255, 0.85);
-        padding: 20px;
-        margin-bottom: 15px;
-        border-radius: 15px;
-        border-left: 5px solid #00ACC1;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        transition: background 0.2s;
+        background: #FFFFFF;
+        padding: 24px;
+        margin-bottom: 16px;
+        border-radius: 6px;
+        border: 1px solid #ECEFF4;
+        border-left: 4px solid #88C0D0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.01);
+        transition: border-left-color 0.3s ease;
     }
     .sentence-box:hover {
-        background: #FFFFFF;
+        border-left-color: #5E81AC;
     }
-    .sentence-amis { font-size: 19px; color: #0288D1; font-weight: 700; margin-bottom: 8px; }
-    .sentence-zh { font-size: 16px; color: #455A64; }
+    .sentence-amis { font-size: 18px; color: #3B4252; font-weight: 600; margin-bottom: 8px; }
+    .sentence-zh { font-size: 15px; color: #4C566A; }
 
-    /* --- Buttons --- */
+    /* --- Buttons (扁平化) --- */
     .stButton>button {
         width: 100%;
-        border-radius: 25px;
-        background: linear-gradient(to right, #26C6DA, #00ACC1);
-        border: none;
-        color: #FFFFFF !important;
-        font-weight: bold;
-        font-size: 16px;
-        padding: 10px 0;
-        box-shadow: 0 4px 0 #00838F;
-        transition: all 0.1s;
-    }
-    .stButton>button:hover { background: linear-gradient(to right, #4DD0E1, #26C6DA); }
-    .stButton>button:active { transform: translateY(4px); box-shadow: none; }
-
-    /* --- Tabs --- */
-    .stTabs [data-baseweb="tab-list"] { gap: 15px; justify-content: center; }
-    .stTabs [data-baseweb="tab"] {
-        color: #006064 !important;
-        background-color: transparent !important;
-        border-radius: 30px;
-        padding: 8px 20px;
+        border-radius: 4px;
+        background-color: #ECEFF4;
+        border: 1px solid #D8DEE9;
+        color: #4C566A !important;
         font-weight: 500;
+        font-size: 15px;
+        padding: 8px 0;
+        transition: all 0.2s ease;
+        box-shadow: none;
+    }
+    .stButton>button:hover { 
+        background-color: #5E81AC; 
+        color: #FFFFFF !important;
+        border-color: #5E81AC;
+    }
+    .stButton>button:active { transform: translateY(1px); }
+
+    /* --- Tabs (無邊框底線設計) --- */
+    .stTabs [data-baseweb="tab-list"] { gap: 30px; justify-content: center; border-bottom: 1px solid #E5E9F0; }
+    .stTabs [data-baseweb="tab"] {
+        color: #4C566A !important;
+        background-color: transparent !important;
+        border-radius: 0;
+        padding: 10px 5px;
+        font-weight: 400;
+        letter-spacing: 1px;
     }
     .stTabs [aria-selected="true"] {
-        background-color: #00BCD4 !important;
-        color: #FFFFFF !important;
-        font-weight: bold;
-        box-shadow: 0 2px 5px rgba(0,188,212,0.4);
+        color: #2E3440 !important;
+        font-weight: 600;
+        border-bottom: 2px solid #4C566A;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -219,7 +213,7 @@ def play_audio(text, filename_base=None):
                     st.audio(path, format=mime)
                     return
         
-        st.markdown(f"<span style='color:#004D40; font-size:12px; background:#B2EBF2; padding:2px 5px; border-radius:4px;'>⚠️ 缺音檔: {filename_base}</span>", unsafe_allow_html=True)
+        st.markdown(f"<span style='color:#3B4252; font-size:12px; background:#ECEFF4; padding:2px 5px; border-radius:4px;'>⚠️ 缺音檔: {filename_base}</span>", unsafe_allow_html=True)
     else:
         try:
             speak_text = text.split('/').strip()
@@ -265,7 +259,7 @@ if 'q1_data' not in st.session_state:
 
 # --- 3. 介面呈現 ---
 def show_learning_mode():
-    st.markdown("<h3 style='color:#00838F; text-align:center; margin-bottom:20px;'>🌊 單字筆記 (Vocabulary)</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color:#4C566A; text-align:center; font-weight:300; letter-spacing:2px; margin-bottom:30px;'>▫️ 單字筆記 (Vocabulary) ▫️</h3>", unsafe_allow_html=True)
     
     cols = st.columns(3)
     for idx, item in enumerate(VOCABULARY):
@@ -288,7 +282,7 @@ def show_learning_mode():
             st.write("")
             
     st.markdown("---")
-    st.markdown("<h3 style='color:#00838F; text-align:center; margin-bottom:20px;'>🏄 例句練習 (Sentences)</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color:#4C566A; text-align:center; font-weight:300; letter-spacing:2px; margin-bottom:30px;'>▫️ 例句練習 (Sentences) ▫️</h3>", unsafe_allow_html=True)
     
     for item in SENTENCES:
         st.markdown(f"""
@@ -300,7 +294,7 @@ def show_learning_mode():
         play_audio(item['amis'], filename_base=item['file'])
 
 def show_quiz_mode():
-    st.markdown("<h3 style='text-align: center; color: #006064;'>🎯 小測驗 (Quiz)</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: #4C566A; font-weight:300; letter-spacing:2px; margin-bottom:20px;'>▫️ 測驗評量 (Quiz) ▫️</h3>", unsafe_allow_html=True)
     st.progress((st.session_state.current_q) / 3)
     st.write("")
 
@@ -308,8 +302,9 @@ def show_quiz_mode():
         data = st.session_state.q1_data
         target = data['target']
         st.markdown(f"""
-        <div class="word-card" style="border-bottom-color:#0288D1;">
-            <h3>🎧 聽聽看，這是哪個字？</h3>
+        <div class="word-card" style="border-top-color:#88C0D0;">
+            <h3 style="color:#3B4252;">聽力測驗</h3>
+            <p style="color:#4C566A; font-size:14px;">請聆聽語音並選擇對應的中文</p>
         </div>
         """, unsafe_allow_html=True)
         play_audio(target['amis'], filename_base=target['file'])
@@ -321,20 +316,20 @@ def show_quiz_mode():
                 if st.button(f"{opt['zh']}", key=f"q1_{idx}"):
                     if opt['amis'] == target['amis']:
                         st.balloons()
-                        st.success("答對了！ (Correct)")
+                        st.success("正確 (Correct)")
                         time.sleep(1)
                         st.session_state.score += 1
                         st.session_state.current_q += 1
                         st.rerun()
                     else:
-                        st.error("再試一次 (Try again)")
+                        st.error("請再試一次")
 
     elif st.session_state.current_q == 1:
         data = st.session_state.q2_data
         st.markdown(f"""
-        <div class="word-card" style="border-bottom-color:#FFCA28;">
-            <h3>🧩 句子填空</h3>
-            <h2 style="color:#004D40;">{data['q'].replace('______', '<span style="color:#00ACC1; text-decoration:underline;">___</span>')}</h2>
+        <div class="word-card" style="border-top-color:#81A1C1;">
+            <h3 style="color:#3B4252;">句子填空</h3>
+            <h2 style="color:#2E3440; margin-top:15px; font-weight:400;">{data['q'].replace('______', '<span style="color:#5E81AC; text-decoration:underline;">___</span>')}</h2>
         </div>
         """, unsafe_allow_html=True)
         
@@ -344,21 +339,21 @@ def show_quiz_mode():
                 if st.button(opt, key=f"q2_{i}"):
                     if opt.lower() in data['ans'].lower() or data['ans'].lower() in opt.lower():
                         st.balloons()
-                        st.success("太棒了！ (Great)")
+                        st.success("正確 (Correct)")
                         time.sleep(1)
                         st.session_state.score += 1
                         st.session_state.current_q += 1
                         st.rerun()
                     else:
-                        st.error("不對喔")
+                        st.error("請再試一次")
 
     elif st.session_state.current_q == 2:
         data = st.session_state.q3_data
         target = data['target']
         st.markdown(f"""
-        <div class="word-card" style="border-bottom-color:#4DD0E1;">
-            <h3>🤔 這是什麼意思？</h3>
-            <h3 style="color:#00695C;">{target['amis']}</h3>
+        <div class="word-card" style="border-top-color:#5E81AC;">
+            <h3 style="color:#3B4252;">句意翻譯</h3>
+            <h3 style="color:#2E3440; margin-top:15px; font-weight:500;">{target['amis']}</h3>
         </div>
         """, unsafe_allow_html=True)
         
@@ -368,20 +363,20 @@ def show_quiz_mode():
             if st.button(opt):
                 if opt == target['zh']:
                     st.balloons()
-                    st.success("全對！ (Perfect)")
+                    st.success("完全正確 (Perfect)")
                     time.sleep(1)
                     st.session_state.score += 1
                     st.session_state.current_q += 1
                     st.rerun()
                 else:
-                    st.error("再想一下")
+                    st.error("請再想一下")
 
     else:
         st.markdown(f"""
-        <div class="word-card" style="border-bottom-color: #00BCD4; background: #E0F7FA;">
-            <h1 style='color: #00838F;'>測驗完成！</h1>
-            <p style='color: #006064; font-size:18px;'>得分: {st.session_state.score} / 3</p>
-            <div style='font-size: 60px;'>🏄‍♂️</div>
+        <div class="word-card" style="border-top-color: #4C566A; background: #ECEFF4;">
+            <h1 style='color: #2E3440; font-weight:300; letter-spacing:2px;'>測驗完成</h1>
+            <p style='color: #4C566A; font-size:18px;'>得分: {st.session_state.score} / 3</p>
+            <div style='font-size: 40px; filter: grayscale(100%); margin-top: 15px;'>🧊</div>
         </div>
         """, unsafe_allow_html=True)
         if st.button("重新開始"):
@@ -396,7 +391,7 @@ def show_debug_info():
         files_audio = [f for f in os.listdir('audio') if f.endswith('.m4a') or f.endswith('.mp3')]
         
     if not files_audio:
-        st.caption("💡 提示：建立 audio 資料夾並放入音檔，即可聽到真人發音。")
+        st.caption("提示：建立 audio 資料夾並放入音檔，即可聽到真人發音。")
 
 # --- 主程式 ---
 def main():
@@ -404,11 +399,11 @@ def main():
     <div class="header-container">
         <h1 class="main-title">Remiad</h1>
         <div class="sub-title">日子、天氣與白天</div>
-        <div class="teacher-tag">🏄 講師：胡美芳 | 教材提供者：胡美芳 🏄</div>
+        <div class="teacher-tag">講師：胡美芳 | 教材提供者：胡美芳</div>
     </div>
     """, unsafe_allow_html=True)
     
-    tab1, tab2 = st.tabs(["🌊 學習筆記", "🎯 小測驗"])
+    tab1, tab2 = st.tabs(["單字與例句", "評量測驗"])
     
     with tab1:
         show_learning_mode()
