@@ -5,10 +5,10 @@ import os
 import re
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.1.4 (Build 20260727 - Pink Bubble Edition)"
+APP_VERSION = "v2.1.4 (Build 20260727 - Exam Guide Link)"
 
 # ==========================================
-# 🛡️ 防腐層：保留指定的原始結構與函數 (完全未變動)
+# 🛡️ 防腐層：保留指定的原始結構與函數
 # ==========================================
 VOCABULARY = []
 SENTENCES = []
@@ -48,7 +48,7 @@ QUIZ_DATA = [
 ]
 
 # ==========================================
-# 🧠 動態解析引擎：跨行讀取與穩定分割版 (完全未變動)
+# 🧠 動態解析引擎：跨行讀取與穩定分割版
 # ==========================================
 def load_question_bank():
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -133,7 +133,7 @@ def load_question_bank():
     return db
 
 # ==========================================
-# 🎨 終極 UI 渲染邏輯 (物理字串切割，100%保證顯示) (完全未變動)
+# 🎨 終極 UI 渲染邏輯 (物理字串切割，100%保證顯示)
 # ==========================================
 def render_mcq(line, prefix):
     """渲染選擇題 (修復 split 回傳 list 的問題，並新增聽力題目隱藏功能)"""
@@ -379,7 +379,7 @@ def render_dictation(line, prefix):
         st.info(line)
 
 def render_section(section_name, db):
-    """通用區塊渲染器 (完全未變動)"""
+    """通用區塊渲染器"""
     questions = db.get(section_name, [])
     if not questions:
         st.warning(f"⚠️ 系統抓不到【{section_name}】的資料。")
@@ -401,149 +401,67 @@ def render_section(section_name, db):
             st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# 🚀 應用程式主邏輯 (Main) (僅修改 CSS 與 樣式部分)
+# 🚀 應用程式主邏輯 (Main)
 # ==========================================
 def main():
-    # 設置頁面圖標與標題
-    st.set_page_config(page_title="中高級認證 - 粉紅泡泡版", page_icon="🍥", layout="centered", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="中高級認證", page_icon="🌲", layout="centered", initial_sidebar_state="collapsed")
 
-    # 🌸 粉紅泡泡學習風格 (Pink Bubble Learning Style) CSS
+    # 🌲 莫蘭迪森林風格 (Forest / Sage Green Style) CSS
     st.markdown("""
     <style>
-    /* 全域背景設定：淺粉色基調與動態泡泡感 */
+    /* 全域背景與文字調性 */
     .stApp {
-        background-color: #FFF0F5; /* LavenderBlush */
-        background-image: 
-            radial-gradient(circle at 10% 20%, rgba(255, 192, 203, 0.5) 0%, transparent 20%),
-            radial-gradient(circle at 90% 80%, rgba(255, 182, 193, 0.4) 0%, transparent 25%);
-        background-attachment: fixed;
+        background-color: #F4F6F4;
+        color: #2D3B32;
     }
-
-    /* 泡泡卡片樣式 */
+    
+    /* 主標題與次標題配色 */
+    h1, h2, h3, .stSubheader {
+        color: #1E3323 !important;
+        font-weight: 600;
+    }
+    
+    /* 測驗題目卡片設計 */
     .quiz-card {
-        background-color: rgba(255, 255, 255, 0.85); /* 半透明白色，透出背景色 */
-        padding: 25px;
-        border-radius: 20px; /* 超圓潤邊角 */
-        border: 2px solid #FFB6C1; /* 淺粉紅邊框 */
-        box-shadow: 0 8px 20px rgba(255, 182, 193, 0.3); /* 柔和的粉色陰影 */
+        background-color: #FFFFFF;
+        padding: 24px;
+        border-radius: 16px;
+        border: 1px solid #D1DDD3;
+        box-shadow: 0 4px 12px rgba(45, 59, 50, 0.05);
         margin-top: 15px;
-        margin-bottom: 30px;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        color: #4A4A4A;
-        position: relative;
-        overflow: hidden;
+        margin-bottom: 25px;
+        transition: all 0.3s ease;
+        color: #2D3B32;
     }
-    
-    /* 卡片懸停效果，增加互動感 */
     .quiz-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(255, 105, 180, 0.4);
-    }
-
-    /* 標題與副標題配色 */
-    h1, h2, h3 {
-        color: #FF69B4 !important; /* HotPink */
-        font-family: 'Arial Rounded MT Bold', sans-serif; /* 嘗試使用圓潤字體 */
+        border-color: #8CA391;
+        box-shadow: 0 6px 16px rgba(45, 59, 50, 0.08);
     }
     
-    .stCaption {
-        color: #FFB6C1 !important;
-    }
-
-    /* 自定義分割線 */
+    /* 分隔線 */
     hr { 
-        border-top: 2px solid #FFC0CB; /* Pink */
-        border-radius: 2px;
-    }
-
-    /* 修改 Streamlit 原生元件顏色 (需要一些 hack) */
-    /* 1. Segmented Control (主選單) */
-    div[data-testid="stSegmentedControl"] button {
-        border-color: #FFB6C1 !important;
-        color: #FF69B4 !important;
-    }
-    div[data-testid="stSegmentedControl"] button[aria-pressed="true"] {
-        background-color: #FF69B4 !important;
-        color: white !important;
-    }
-
-    /* 2. Radio Button (單選鈕) */
-    div[data-testid="stMarkdownContainer"] p strong {
-        color: #DB7093; /* PaleVioletRed 題目文字 color */
-    }
-    label[data-testid="stWidgetLabel"] p {
-        color: #4A4A4A !important; /* 選項說明文字 */
-    }
-    div[data-testid="stRadio"] label[data-baseweb="radio"] div:first-child {
-        border-color: #FFB6C1 !important; /* 未選中圓圈 */
-    }
-    div[data-testid="stRadio"] label[data-baseweb="radio"] div:first-child div {
-        background-color: #FF69B4 !important; /* 選中圓點 */
-    }
-
-    /* 3. Toggle Switch (切換開關) */
-    div[data-testid="stCheckbox"] label[data-baseweb="checkbox"] div:first-child {
-        border-color: #FFB6C1 !important;
-    }
-    div[data-testid="stCheckbox"] label[data-baseweb="checkbox"] div[aria-checked="true"] > div:first-child {
-        background-color: #FF69B4 !important;
-        border-color: #FF69B4 !important;
-    }
-
-    /* 4. Text Area (輸入框) */
-    div[data-testid="stTextArea"] textarea {
-        border-radius: 10px;
-        border-color: #FFC0CB;
-        background-color: #FFF5F7;
-    }
-    div[data-testid="stTextArea"] textarea:focus {
-        border-color: #FF69B4;
-        box-shadow: 0 0 0 1px #FF69B4;
+        border-top: 1px solid #C4D3C7; 
     }
     
-    /* 5. Success/Error/Info 訊息框圓潤化 */
+    /* 連結顏色 */
+    a {
+        color: #3B6043 !important;
+        font-weight: bold;
+    }
+    
+    /* 提示與訊息框主題調整 */
     .stAlert {
-        border-radius: 15px;
-    }
-
-    </style>
-    
-    <!-- 額外的 CSS 用於生成漂浮背景泡泡 (物理上不在卡片內) -->
-    <style>
-    .stApp::before, .stApp::after {
-        content: '';
-        position: fixed;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(255,192,203,0.3) 100%);
-        z-index: -1; /* 確保在內容後面 */
-        pointer-events: none; /* 不影響點擊 */
-    }
-    .stApp::before {
-        width: 300px;
-        height: 300px;
-        top: -50px;
-        left: -100px;
-        opacity: 0.6;
-    }
-    .stApp::after {
-        width: 200px;
-        height: 200px;
-        bottom: 50px;
-        right: -50px;
-        opacity: 0.4;
+        border-radius: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    # st.title("🎓 中高級認證") # 原版標題
-    st.markdown("<h1>🍥 阿美語中高級認證學習營</h1>", unsafe_allow_html=True) # 可愛版標題
-    st.caption("[請選擇練習平台 - 充滿粉紅泡泡的學習空間]")
+    st.title("🌲 中高級認證")
+    st.caption("[請選擇練習平台]")
 
     main_options = ["📋 認證考試說明", "🎧 聽力", "🗣️ 口說", "📖 閱讀", "✍️ 寫作"]
-    # 使用新增的 segmented_control (Streamlit 1.40+)
     current_tab = st.segmented_control("主選單導覽", main_options, default=None, label_visibility="collapsed")
 
-    # (Session state 邏輯保持不變)
     if "previous_tab" not in st.session_state:
         st.session_state.previous_tab = None
 
@@ -557,15 +475,13 @@ def main():
     db = load_question_bank()
 
     if current_tab == "📋 認證考試說明":
-        # 🌟 保留您提供的超連結與邏輯
         st.subheader("📋 [認證考試說明](https://lokahsu.ilrdf.org.tw/web_lokahsu/Files/Guide/1_20251211_162558.pdf)")
         st.divider()
-        st.info("歡迎來到粉紅泡泡學習空間！請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫。")
+        st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫。")
 
     elif current_tab == "🎧 聽力":
         st.subheader("🎧 聽力測驗 (pitengil)")
         st.divider()
-        # 將 radio 改為 horizontal 圓鈕看起來更可愛
         listening_sub = st.radio("題型選擇：", ["選擇題-聽音選詞", "選擇題-對話理解"], horizontal=True)
         if listening_sub == "選擇題-聽音選詞":
             render_section("聽音選詞", db)
@@ -602,7 +518,7 @@ def main():
             render_section("問答", db)
 
     st.write("---")
-    st.caption(f"© 2026 中高級認證 App 三一開發團隊 ｜ 🌸 Pink Bubble Edition 系統版本： **{APP_VERSION}** ")
+    st.caption(f"© 2026 中高級認證 App 三一開發團隊 ｜ 系統版本： **{APP_VERSION}** ")
 
 if __name__ == "__main__":
     main()
