@@ -1,8 +1,3 @@
-書嫻，沒問題！我已經將「認證考試說明」的標題加上了您提供的 PDF 連結。在 Streamlit 中，我們可以直接在 `st.subheader()` 裡面使用 Markdown 的超連結語法 `[顯示文字](連結網址)` 來達成這個功能。
-
-以下是為您準備的完整版（不省略／不簡化）程式碼，請直接複製並覆蓋原本的 `app.py`：
-
-```python
 import streamlit as st
 import random
 import json
@@ -496,5 +491,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-```
