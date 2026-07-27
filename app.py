@@ -4,8 +4,8 @@ import json
 import os
 import re
 
-# 🚀 全域系統版本號
-APP_VERSION = "v2.1.4 (Build 20260727 - Forest Waterfall Theme)"
+# 🚀 全域系統版本號 (更新為阿美族風格版)
+APP_VERSION = "v2.1.5 (Build 20260727 - Pangcah Style Update)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -404,76 +404,57 @@ def render_section(section_name, db):
 # 🚀 應用程式主邏輯 (Main)
 # ==========================================
 def main():
-    st.set_page_config(page_title="中高級認證 - 森林瀑布版", page_icon="🌲", layout="centered", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="Pangcah 中高級認證", page_icon="🌺", layout="centered", initial_sidebar_state="collapsed")
 
-    # 🌲 森林瀑布風格 (Forest Waterfall Theme) CSS 定製
+    # 阿美族傳統編織與熱情紅黑風格 (Amis Traditional Weave & Passionate Red-Black Style) CSS
     st.markdown("""
     <style>
-    /* 全域背景：深林瀑布意象柔和漸層 */
+    /* 整體背景色帶點大地溫暖感 */
     .stApp {
-        background: linear-gradient(135deg, #eaf4f0 0%, #d8ece5 50%, #c4e3db 100%);
-        color: #1b3b32;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background-color: #FAF8F5;
     }
     
-    /* 標題樣式：清霜森林深綠 */
-    h1, h2, h3 {
-        color: #0f382c !important;
-        font-weight: 700;
-    }
-    
-    /* 卡片容器：半透明高斯模糊瀑布冷霧感 */
+    /* 測驗卡片設計：融合阿美族的紅、黑、白三色元素 */
     .quiz-card {
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(10px);
-        padding: 26px;
-        border-radius: 16px;
-        border: 1px solid rgba(132, 189, 175, 0.4);
-        box-shadow: 0 8px 20px rgba(18, 69, 53, 0.08);
-        margin-top: 18px;
+        background-color: #FFFFFF;
+        padding: 24px;
+        border-radius: 8px;
+        border: 1px solid #EBE4D8;
+        border-left: 8px solid #C91A22; /* 阿美族熱情紅 */
+        border-right: 8px solid #1A1A1A; /* 阿美族沉穩黑 */
+        box-shadow: 0 4px 12px rgba(201, 26, 34, 0.08);
+        margin-top: 15px;
         margin-bottom: 25px;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        color: #1c3d33;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        color: #2D2D2D;
     }
+    
     .quiz-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 12px 24px rgba(18, 69, 53, 0.12);
+        box-shadow: 0 6px 16px rgba(201, 26, 34, 0.15);
     }
     
-    /* 分隔線：清澈水藍綠色調 */
+    /* 分隔線改為傳統意象的紅色虛線 */
     hr { 
-        border: none;
-        height: 2px;
-        background: linear-gradient(90deg, rgba(78,168,154,0.1), rgba(78,168,154,0.6), rgba(78,168,154,0.1));
-        margin: 20px 0;
+        border-top: 2px dashed #C91A22; 
+        opacity: 0.6;
     }
-
-    /* Streamlit 切換開關 (Toggle) 與 Radio 選項優化 */
-    div[data-baseweb="radio"] label {
-        color: #1f4539 !important;
+    
+    /* 標題文字顏色微調 */
+    h1, h2, h3 {
+        color: #1A1A1A !important;
+        font-weight: 700 !important;
     }
-
-    /* 警告與提示框風格修飾 */
-    .stAlert {
-        border-radius: 12px;
-    }
-
-    /* 文字輸入框樣式 */
-    .stTextArea textarea {
-        background-color: rgba(240, 248, 245, 0.9) !important;
-        border: 1px solid #91c2b5 !important;
-        border-radius: 10px !important;
-        color: #14362d !important;
-    }
-    .stTextArea textarea:focus {
-        border-color: #2d8a74 !important;
-        box-shadow: 0 0 0 2px rgba(45, 138, 116, 0.2) !important;
+    
+    /* 選擇器標籤文字顏色 */
+    .st-bb {
+        color: #C91A22;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    st.title("🌲 森林瀑布風格 - 中高級認證")
-    st.caption("[請選擇練習平台]")
+    st.title("🌺 Pangcah 中高級認證")
+    st.caption("[請選擇練習平台 - O pinanaman to sowal no Pangcah]")
 
     main_options = ["📋 認證考試說明", "🎧 聽力", "🗣️ 口說", "📖 閱讀", "✍️ 寫作"]
     current_tab = st.segmented_control("主選單導覽", main_options, default=None, label_visibility="collapsed")
@@ -494,7 +475,7 @@ def main():
         # 🌟 更新這裡：加入您提供的超連結
         st.subheader("📋 [認證考試說明](https://lokahsu.ilrdf.org.tw/web_lokahsu/Files/Guide/1_20251211_162558.pdf)")
         st.divider()
-        st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫。")
+        st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫。\n\nNga'ay ho! 歡迎來到阿美語學習殿堂。")
 
     elif current_tab == "🎧 聽力":
         st.subheader("🎧 聽力測驗 (pitengil)")
@@ -535,7 +516,10 @@ def main():
             render_section("問答", db)
 
     st.write("---")
-    st.caption(f"© 2026 中高級認證 App 三一開發團隊 ｜ 系統版本： **{APP_VERSION}** ")
+    st.caption(f"© 2026 中高級認證 App 三一開發團隊 ｜ 系統版本： **{APP_VERSION}** ｜ Aray! 感謝您的使用。")
 
 if __name__ == "__main__":
     main()
+
+
+
