@@ -5,7 +5,7 @@ import os
 import re
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.1.0 (Build 20260727 - Listening Hidden)"
+APP_VERSION = "v2.1.1 (Build 20260727 - Dictation Hidden)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -333,7 +333,13 @@ def render_dictation(line, prefix):
             else:
                 ch = text.strip()
         
-        st.markdown(f"✍️ **{am}**")
+        # 加入作答的文字輸入框，模擬真實寫作情境
+        st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="請在此輸入您聽寫的句子...")
+        
+        # 🌟 寫作測驗專屬：隱藏聽寫原文功能
+        if st.toggle("👁️ 顯示聽寫原文", key=f"t_show_dict_{prefix}"):
+            st.markdown(f"✍️ **{am}**")
+            
         if ch or ana:
             if st.toggle("💡 顯示翻譯與分析", key=f"t_{prefix}"):
                 msg = ""
