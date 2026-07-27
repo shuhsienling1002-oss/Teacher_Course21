@@ -5,7 +5,7 @@ import os
 import re
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.0.0 (Build 20260619)"
+APP_VERSION = "v2.0.1 (Build 20260727 - Optimized)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -28,7 +28,6 @@ def show_quiz_mode():
 def show_debug_info(): 
     pass
 
-# 原始聽力題庫 (15題標準數據庫，完全保留)
 QUIZ_DATA = [
     {"id": 1, "audio_path": "assets/audio/01_listening/listening_words/tengil-a1-01.mp3", "question_text": "聆聽音檔，選出關聯的詞彙：", "options": ["riyar", "'alo", "fanaw", "sa'owac"], "correct_text": "riyar"},
     {"id": 2, "audio_path": "assets/audio/01_listening/listening_words/tengil-a1-02.mp3", "question_text": "聆聽音檔，選出關聯的詞彙：", "options": ["korkor", "rohayan", "romakat", "rotarot"], "correct_text": "romakat"},
@@ -48,7 +47,7 @@ QUIZ_DATA = [
 ]
 
 # ==========================================
-# 🧠 動態解析引擎：無敵掃描容錯版
+# 🧠 動態解析引擎：跨行讀取與穩定分割版
 # ==========================================
 def load_question_bank():
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -90,23 +89,45 @@ def load_question_bank():
     if not file_loaded:
         return db
 
+    # 使用緩衝區將跨行的題目合併為單一字串
     current_section = None
+    current_question = []
+
+    def save_question():
+        if current_section and current_question:
+            q_text = " ".join(current_question).strip()
+            if re.match(r'^\d+[\.、]', q_text):
+                db[current_section].append(q_text)
+            current_question.clear()
+
     for line in target_content.split("\n"):
         line = line.strip()
-        if not line: continue
+        # 遇到空行代表題目結束，存入題庫
+        if not line:
+            save_question()
+            continue
+            
+        # 判斷是否為題型切換標題
+        if "一、選擇題（聽音選詞）" in line: save_question(); current_section = "聽音選詞"
+        elif "二、選擇題（對話理解）" in line: save_question(); current_section = "對話理解"
+        elif "三、段落朗讀" in line: save_question(); current_section = "段落朗讀"
+        elif "四、情境問答" in line: save_question(); current_section = "情境問答"
+        elif "五、看圖表達" in line: save_question(); current_section = "看圖表達"
+        elif "六、選擇題（詞彙語意）" in line: save_question(); current_section = "詞彙語意"
+        elif "七、選擇題（語言結構）" in line: save_question(); current_section = "語言結構"
+        elif "八、句子聽寫" in line: save_question(); current_section = "句子聽寫"
+        elif "九、問答" in line: save_question(); current_section = "問答"
         
-        if "聽音選詞" in line: current_section = "聽音選詞"
-        elif "對話理解" in line: current_section = "對話理解"
-        elif "段落朗讀" in line: current_section = "段落朗讀"
-        elif "情境問答" in line: current_section = "情境問答"
-        elif "看圖表達" in line: current_section = "看圖表達"
-        elif "詞彙語意" in line: current_section = "詞彙語意"
-        elif "語言結構" in line: current_section = "語言結構"
-        elif "句子聽寫" in line: current_section = "句子聽寫"
-        elif "問答" in line and "情境問答" not in line: current_section = "問答"
-        
-        elif current_section and re.match(r'^\d+[\.、]', line):
-            db[current_section].append(line)
+        # 開頭為數字代表新題目的開始
+        elif re.match(r'^\d+[\.、]', line):
+            save_question()
+            current_question.append(line)
+        # 屬於目前題目的後續內容（選項或答案）
+        else:
+            if current_question:
+                current_question.append(line)
+                
+    save_question() # 儲存最後一題
             
     return db
 
@@ -114,45 +135,47 @@ def load_question_bank():
 # 🎨 終極 UI 渲染邏輯 (物理字串切割，100%保證顯示)
 # ==========================================
 def render_mcq(line, prefix):
-    """渲染選擇題 (物理切割，避免 Regex 失效)"""
+    """渲染選擇題 (修復 split 回傳 list 的問題)"""
     try:
         if "(A)" not in line:
             st.info(line)
             return
 
-        # 切割題目與選項區
-        q_part = line.split("(A)")
-        rest = "(A)" + line.split("(A)", 1)
+        # 限制分割次數，並明確取值
+        parts = line.split("(A)", 1)
+        q_part = parts[0].strip()
+        rest = "(A)" + parts[1]
         
         opts_str = rest
         ans_str = ""
         ana_str = ""
         
-        # 切割解答與分析
         if "答案：" in rest:
-            opts_str = rest.split("答案：")
-            ans_ana = rest.split("答案：")
+            ans_parts = rest.split("答案：", 1)
+            opts_str = ans_parts[0].strip()
+            ans_ana = ans_parts[1]
+            
             if "分析：" in ans_ana:
-                ans_str = ans_ana.split("分析：").strip("。 ")
-                ana_str = ans_ana.split("分析：").strip()
+                final_parts = ans_ana.split("分析：", 1)
+                ans_str = final_parts[0].strip("。 ")
+                ana_str = final_parts[1].strip()
             else:
                 ans_str = ans_ana.strip("。 ")
 
-        st.markdown(f"**{q_part.strip()}**")
+        st.markdown(f"**{q_part}**")
         
         # 安全切割四個選項
         opts = []
         for tag in ["(A)", "(B)", "(C)", "(D)"]:
             if tag in opts_str:
-                opt_text = opts_str.split(tag)
+                opt_text = opts_str.split(tag, 1)[1]
                 for next_tag in ["(B)", "(C)", "(D)"]:
                     if next_tag > tag and next_tag in opt_text:
-                        opt_text = opt_text.split(next_tag)
+                        opt_text = opt_text.split(next_tag, 1)[0]
                 opts.append(tag + " " + opt_text.strip())
 
         user_ans = st.radio("請選擇：", opts, index=None, key=prefix)
         
-        # 🌟 新增萬用解答開關，不用作答也能看答案
         if st.toggle("💡 顯示解答與分析", key=f"t_ans_{prefix}"):
             if ans_str:
                 msg = f"**正確答案：** {ans_str}"
@@ -174,13 +197,15 @@ def render_reading(line, prefix):
         q_part = line
         ch_part = ""
         if "(中文：" in line:
-            q_part, ch_part = line.split("(中文：")
-            ch_part = ch_part.strip(")")
+            parts = line.split("(中文：", 1)
+            q_part = parts[0].strip()
+            ch_part = parts[1].strip(")")
         elif "(中文大意：" in line:
-            q_part, ch_part = line.split("(中文大意：")
-            ch_part = ch_part.strip(")")
+            parts = line.split("(中文大意：", 1)
+            q_part = parts[0].strip()
+            ch_part = parts[1].strip(")")
         
-        st.markdown(f"📖 **{q_part.strip()}**")
+        st.markdown(f"📖 **{q_part}**")
         if ch_part:
             if st.toggle("💡 顯示中文翻譯", key=f"t_{prefix}"):
                 st.success(ch_part)
@@ -197,37 +222,38 @@ def render_qa(line, prefix):
         ana = ""
         
         if "中文：" in text:
-            parts = text.split("中文：")
-            q_am = parts
-            text = parts
+            parts = text.split("中文：", 1)
+            q_am = parts[0].strip()
+            text = parts[1]
             
         if "參考回答：" in text:
-            parts = text.split("參考回答：")
-            if not ch_hint: ch_hint = parts
-            text = parts
+            parts = text.split("參考回答：", 1)
+            ch_hint = parts[0].strip()
+            text = parts[1]
         elif "作答參考：" in text:
-            parts = text.split("作答參考：")
-            if not ch_hint: ch_hint = parts
-            text = parts
+            parts = text.split("作答參考：", 1)
+            ch_hint = parts[0].strip()
+            text = parts[1]
             
         if "分析：" in text:
-            parts = text.split("分析：")
-            if not ans: ans = parts
-            ana = parts
+            parts = text.split("分析：", 1)
+            ans = parts[0].strip()
+            ana = parts[1].strip()
         else:
-            if not ans and ch_hint: ans = text
+            if not ans: 
+                ans = text.strip()
         
         q_am = q_am.replace("題目：", " 題目：")
         
-        st.markdown(f"🗣️ **{q_am.strip()}**")
+        st.markdown(f"🗣️ **{q_am}**")
         if ch_hint:
-            st.caption(f"中文提示：{ch_hint.strip()}")
+            st.caption(f"中文提示：{ch_hint}")
             
         if ans or ana:
             if st.toggle("💡 顯示參考解答", key=f"t_{prefix}"):
                 msg = ""
-                if ans: msg += f"參考解答：{ans.strip()}"
-                if ana: msg += f"\n\n分析：{ana.strip()}"
+                if ans: msg += f"參考解答：{ans}"
+                if ana: msg += f"\n\n分析：{ana}"
                 st.success(msg)
     except:
         st.info(line)
@@ -242,34 +268,40 @@ def render_picture(line, prefix):
         ana = ""
         
         if "圖片情境：" in text:
-            pic = text.split("圖片情境：")
+            parts = text.split("圖片情境：", 1)
+            pic = parts[1]
             
         if "中文提示：" in pic:
-            hint_part = pic.split("中文提示：")
-            pic = pic.split("中文提示：")
+            parts = pic.split("中文提示：", 1)
+            pic = parts[0].strip()
+            hint_part = parts[1]
+            
             if "作答參考：" in hint_part:
-                hint = hint_part.split("作答參考：")
-                ans_part = hint_part.split("作答參考：")
+                h_parts = hint_part.split("作答參考：", 1)
+                hint = h_parts[0].strip()
+                ans_part = h_parts[1]
                 
                 if "重點分析：" in ans_part:
-                    ans = ans_part.split("重點分析：")
-                    ana = ans_part.split("重點分析：")
+                    a_parts = ans_part.split("重點分析：", 1)
+                    ans = a_parts[0].strip()
+                    ana = a_parts[1].strip()
                 elif "重點：" in ans_part:
-                    ans = ans_part.split("重點：")
-                    ana = ans_part.split("重點：")
+                    a_parts = ans_part.split("重點：", 1)
+                    ans = a_parts[0].strip()
+                    ana = a_parts[1].strip()
                 else:
-                    ans = ans_part
+                    ans = ans_part.strip()
             else:
-                hint = hint_part
+                hint = hint_part.strip()
         
-        st.markdown(f"🖼️ **圖片情境：** {pic.strip()}")
+        st.markdown(f"🖼️ **圖片情境：** {pic}")
         if hint:
-            st.caption(f"中文提示：{hint.strip()}")
+            st.caption(f"中文提示：{hint}")
         if ans or ana:
             if st.toggle("💡 顯示作答參考", key=f"t_{prefix}"):
                 msg = ""
-                if ans: msg += f"作答參考：{ans.strip()}"
-                if ana: msg += f"\n\n重點：{ana.strip()}"
+                if ans: msg += f"作答參考：{ans}"
+                if ana: msg += f"\n\n重點：{ana}"
                 st.success(msg)
     except:
         st.info(line)
@@ -283,22 +315,23 @@ def render_dictation(line, prefix):
         ana = ""
         
         if "中文：" in text:
-            parts = text.split("中文：")
-            am = parts.replace("阿美語：", "")
-            text = parts
+            parts = text.split("中文：", 1)
+            am = parts[0].replace("阿美語：", "").strip()
+            text = parts[1]
             
             if "分析：" in text:
-                ch = text.split("分析：")
-                ana = text.split("分析：")
+                sub_parts = text.split("分析：", 1)
+                ch = sub_parts[0].strip()
+                ana = sub_parts[1].strip()
             else:
-                ch = text
+                ch = text.strip()
         
-        st.markdown(f"✍️ **{am.strip()}**")
+        st.markdown(f"✍️ **{am}**")
         if ch or ana:
             if st.toggle("💡 顯示翻譯與分析", key=f"t_{prefix}"):
                 msg = ""
-                if ch: msg += f"中文：{ch.strip()}"
-                if ana: msg += f"\n\n分析：{ana.strip()}"
+                if ch: msg += f"中文：{ch}"
+                if ana: msg += f"\n\n分析：{ana}"
                 st.success(msg)
     except:
         st.info(line)
@@ -334,7 +367,6 @@ def main():
     # 極簡北歐冷調風 (Minimalist Nordic Cold Tone) CSS
     st.markdown("""
     <style>
-    /* 核心題目卡片式容器：只有顯式宣告的卡片才會擁有此風格 */
     .quiz-card {
         background-color: #F8F9FA;
         padding: 24px;
@@ -368,7 +400,6 @@ def main():
 
     db = load_question_bank()
 
-    ### ---- 第二層：根據選擇顯示對應架構 ----
     if current_tab == "📋 認證考試說明":
         st.subheader("📋 認證考試說明")
         st.divider()
