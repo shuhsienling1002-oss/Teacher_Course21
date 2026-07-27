@@ -133,10 +133,10 @@ def load_question_bank():
     return db
 
 # ==========================================
-# 🎨 終極 UI 渲染邏輯 (物理字串切割，100%保證顯示)
+# 🎨 終極 UI 渲染邏輯 (物理字串切割，三者徹底分離)
 # ==========================================
 def render_mcq(line, prefix):
-    """渲染選擇題 (修復 split 回傳 list 的問題，並新增聽力題目隱藏功能)"""
+    """渲染選擇題 (題目、答案、分析完全分離)"""
     try:
         if "(A)" not in line:
             st.info(line)
@@ -163,13 +163,13 @@ def render_mcq(line, prefix):
             else:
                 ans_str = ans_ana.strip("。 ")
                 
-        # 🌟 聽力測驗專屬：隱藏題目文字功能
+        # 🟢 1. 獨立題目區塊 (Question Block)
         is_listening = "聽音選詞" in prefix or "對話理解" in prefix
         if is_listening:
             if st.toggle("👁️ 顯示題目文字", key=f"t_show_q_{prefix}"):
-                st.markdown(f"**{q_part}**")
+                st.markdown(f"**📝 題目：** {q_part}")
         else:
-            st.markdown(f"**{q_part}**")
+            st.markdown(f"**📝 題目：** {q_part}")
             
         # 安全切割四個選項
         opts = []
@@ -181,25 +181,41 @@ def render_mcq(line, prefix):
                         opt_text = opt_text.split(next_tag, 1)
                 opts.append(tag + " " + opt_text.strip())
                 
-        user_ans = st.radio("請選擇：", opts, index=None, key=prefix)
+        user_ans = st.radio("請選擇：", opts, index=None, key=prefix, label_visibility="collapsed")
         
-        if st.toggle("💡 顯示解答與分析", key=f"t_ans_{prefix}"):
+        # 即時作答回饋 (與下方答案解析區隔)
+        if user_ans and ans_str:
+            if ans_str in user_ans:
+                st.success("✅ 選擇正確！")
+            else:
+                st.error("❌ 選擇錯誤。")
+
+        st.divider() # 視覺阻隔線
+        
+        # 🟢 2 & 3. 獨立答案與分析區塊 (Answer & Analysis Block)
+        col1, col2 = st.columns(2)
+        with col1:
+            show_ans = st.toggle("🎯 顯示答案", key=f"t_ans_{prefix}")
+        with col2:
+            show_ana = st.toggle("🔍 顯示分析", key=f"t_ana_{prefix}")
+            
+        if show_ans:
             if ans_str:
-                msg = f"**正確答案：** {ans_str}"
-                if ana_str: msg += f"\n\n**分析：** {ana_str}"
-                st.success(msg)
+                st.success(f"**正確答案：** {ans_str}")
             else:
                 st.warning("無標準答案。")
-        elif user_ans and ans_str:
-            if ans_str in user_ans:
-                st.success(f"✅ 正確！" + (f"分析：{ana_str}" if ana_str else ""))
+                
+        if show_ana:
+            if ana_str:
+                st.info(f"**分析：** {ana_str}")
             else:
-                st.error(f"❌ 錯誤。正確答案：{ans_str}。" + (f"分析：{ana_str}" if ana_str else ""))
+                st.warning("此題無特別分析。")
+                
     except Exception as e:
         st.info(line)
 
 def render_reading(line, prefix):
-    """渲染段落朗讀"""
+    """渲染段落朗讀 (分離原文與大意)"""
     try:
         q_part = line
         ch_part = ""
@@ -212,15 +228,23 @@ def render_reading(line, prefix):
             q_part = parts.strip()
             ch_part = parts.strip(")")
             
-        st.markdown(f"📖 **{q_part}**")
-        if ch_part:
-            if st.toggle("💡 顯示中文翻譯", key=f"t_{prefix}"):
-                st.success(ch_part)
+        # 🟢 1. 獨立題目區塊
+        st.markdown(f"**📖 朗讀段落 (題目)：**\n\n{q_part}")
+        
+        st.divider()
+        
+        # 🟢 2. 獨立答案/翻譯區塊
+        show_ans = st.toggle("🎯 顯示中文大意 (答案)", key=f"t_ans_{prefix}")
+        if show_ans:
+            if ch_part:
+                st.success(f"**中文大意：** {ch_part}")
+            else:
+                st.warning("無中文大意。")
     except:
         st.info(line)
 
 def render_qa(line, prefix):
-    """渲染問答與情境問答"""
+    """渲染問答與情境問答 (題目、答案、分析完全分離)"""
     try:
         text = line
         q_am = text
@@ -252,29 +276,43 @@ def render_qa(line, prefix):
                 
         q_am = q_am.replace("題目：", " 題目：")
         
-        # 🌟 口說測驗-情境問答專屬：隱藏題目與提示功能
+        # 🟢 1. 獨立題目區塊
         is_situational = "情境問答" in prefix
         if is_situational:
             if st.toggle("👁️ 顯示題目與提示", key=f"t_show_q_{prefix}"):
-                st.markdown(f"🗣️ **{q_am}**")
+                st.markdown(f"**🗣️ 題目：** {q_am}")
                 if ch_hint:
-                    st.caption(f"中文提示：{ch_hint}")
+                    st.caption(f"💡 中文提示：{ch_hint}")
         else:
-            st.markdown(f"🗣️ **{q_am}**")
+            st.markdown(f"**🗣️ 題目：** {q_am}")
             if ch_hint:
-                st.caption(f"中文提示：{ch_hint}")
+                st.caption(f"💡 中文提示：{ch_hint}")
                 
-        if ans or ana:
-            if st.toggle("💡 顯示參考解答", key=f"t_{prefix}"):
-                msg = ""
-                if ans: msg += f"參考解答：{ans}"
-                if ana: msg += f"\n\n分析：{ana}"
-                st.success(msg)
+        st.divider()
+        
+        # 🟢 2 & 3. 獨立答案與分析區塊
+        col1, col2 = st.columns(2)
+        with col1:
+            show_ans = st.toggle("🎯 顯示參考解答", key=f"t_ans_{prefix}")
+        with col2:
+            show_ana = st.toggle("🔍 顯示分析", key=f"t_ana_{prefix}")
+            
+        if show_ans:
+            if ans: 
+                st.success(f"**參考解答：** {ans}")
+            else:
+                st.warning("無參考解答。")
+                
+        if show_ana:
+            if ana:
+                st.info(f"**分析：** {ana}")
+            else:
+                st.warning("此題無特別分析。")
     except:
         st.info(line)
 
 def render_picture(line, prefix):
-    """渲染看圖表達，並支援動態載入對應題號圖片"""
+    """渲染看圖表達 (情境、作答參考、重點分析完全分離)"""
     try:
         text = line
         pic = text
@@ -309,9 +347,8 @@ def render_picture(line, prefix):
             else:
                 hint = hint_part.strip()
                 
-        # 🌟 動態讀取對應圖片邏輯 (假設 prefix 格式為 "看圖表達_0")
+        # 動態圖片讀取邏輯
         try:
-            # 從 prefix 中解析題號 (index + 1)
             idx = int(prefix.split('_')[-1]) + 1
             img_path_jpg = f"assets/images/picture_{idx}.jpg"
             img_path_png = f"assets/images/picture_{idx}.png"
@@ -321,29 +358,42 @@ def render_picture(line, prefix):
             elif os.path.exists(img_path_png):
                 st.image(img_path_png, use_container_width=True)
             else:
-                st.info(f"🖼️ 圖片佔位區：若要顯示圖片，請將圖片命名為 `picture_{idx}.jpg` 或 `.png`，並放置於 `assets/images/` 資料夾中。")
+                st.info(f"🖼️ 圖片佔位區：若要顯示圖片，請將圖片命名為 `picture_{idx}.jpg` 或 `.png`，放置於 `assets/images/`。")
         except:
-            pass # 若解析題號失敗則安全跳過
+            pass 
             
-        st.markdown(f"🖼️ **圖片情境：** {pic}")
-        
+        # 🟢 1. 獨立題目區塊
+        st.markdown(f"**🖼️ 圖片情境 (題目)：** {pic}")
         if hint:
-            st.caption(f"中文提示：{hint}")
+            st.caption(f"💡 中文提示：{hint}")
             
-        # 加入輸入框作為草稿區
         st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="可以在此輸入您的口說草稿...")
         
-        if ans or ana:
-            if st.toggle("💡 顯示作答參考", key=f"t_{prefix}"):
-                msg = ""
-                if ans: msg += f"作答參考：{ans}"
-                if ana: msg += f"\n\n重點：{ana}"
-                st.success(msg)
+        st.divider()
+        
+        # 🟢 2 & 3. 獨立答案與分析區塊
+        col1, col2 = st.columns(2)
+        with col1:
+            show_ans = st.toggle("🎯 顯示作答參考", key=f"t_ans_{prefix}")
+        with col2:
+            show_ana = st.toggle("🔍 顯示重點分析", key=f"t_ana_{prefix}")
+            
+        if show_ans:
+            if ans:
+                st.success(f"**作答參考：** {ans}")
+            else:
+                st.warning("無作答參考。")
+                
+        if show_ana:
+            if ana:
+                st.info(f"**重點分析：** {ana}")
+            else:
+                st.warning("此題無重點分析。")
     except:
         st.info(line)
 
 def render_dictation(line, prefix):
-    """渲染句子聽寫"""
+    """渲染句子聽寫 (題目、翻譯、分析完全分離)"""
     try:
         text = line
         am = text
@@ -362,19 +412,33 @@ def render_dictation(line, prefix):
             else:
                 ch = text.strip()
                 
-        # 加入作答的文字輸入框，模擬真實寫作情境
         st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="請在此輸入您聽寫的句子...")
         
-        # 🌟 寫作測驗專屬：隱藏聽寫原文功能
-        if st.toggle("👁️ 顯示聽寫原文", key=f"t_show_dict_{prefix}"):
-            st.markdown(f"✍️ **{am}**")
+        st.divider()
+        
+        # 🟢 1, 2, 3. 三者各自獨立的開關與區塊
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            show_q = st.toggle("👁️ 顯示原文 (題目)", key=f"t_show_dict_{prefix}")
+        with col2:
+            show_ans = st.toggle("🎯 顯示翻譯 (答案)", key=f"t_ans_{prefix}")
+        with col3:
+            show_ana = st.toggle("🔍 顯示分析", key=f"t_ana_{prefix}")
             
-        if ch or ana:
-            if st.toggle("💡 顯示翻譯與分析", key=f"t_{prefix}"):
-                msg = ""
-                if ch: msg += f"中文：{ch}"
-                if ana: msg += f"\n\n分析：{ana}"
-                st.success(msg)
+        if show_q:
+            st.markdown(f"**✍️ 聽寫原文：** {am}")
+            
+        if show_ans:
+            if ch:
+                st.success(f"**中文：** {ch}")
+            else:
+                st.warning("無中文翻譯。")
+                
+        if show_ana:
+            if ana:
+                st.info(f"**分析：** {ana}")
+            else:
+                st.warning("此題無特別分析。")
     except:
         st.info(line)
 
@@ -443,7 +507,6 @@ def main():
     db = load_question_bank()
     
     if current_tab == "📋 認證考試說明":
-        # 🌟 更新這裡：加入您提供的超連結
         st.subheader("📋 [認證考試說明](https://lokahsu.ilrdf.org.tw/web_lokahsu/Files/Guide/1_20251211_162558.pdf)")
         st.divider()
         st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫。")
