@@ -1,10 +1,9 @@
-import streamlit as st
-import time
-import os
-import random
-from gtts import gTTS
-from io import BytesIO
+抱歉！剛才為了呈現效果，省略了中間的邏輯程式碼，導致您直接複製時無法正常運作。
+這次為您奉上完全獨立、可直接複製執行的完整程式碼。
+這次改用「極簡暗黑科技風 (Minimal Cyber Noir)」，採用深灰底色（#121212）搭配冷冽的螢光藍、極光綠與電子紫色，並將原本的紙膠帶與點點手帳，全部替換成發光光暈邊框、數碼儀表板卡片與科技粒子風格。
+請直接完整複製下方程式碼，貼入您的檔案中即可直接啟動：
 
+import streamlit as stimport timeimport osimport randomfrom gtts import gTTSfrom io import BytesIO
 # --- 0. 系統配置 ---
 st.set_page_config(
     page_title="阿美語 - 日子與天氣 (Cyber)", 
@@ -12,7 +11,6 @@ st.set_page_config(
     layout="centered", 
     initial_sidebar_state="collapsed"
 )
-
 # --- CSS 視覺魔法 (極簡暗黑科技風) ---
 st.markdown("""
     <style>
@@ -155,11 +153,8 @@ st.markdown("""
     .stProgress > div > div > div {
         background-color: #00E5FF !important;
     }
-    </style>
-""", unsafe_allow_html=True)
-
-# --- 1. 資料設定 (主題：Remiad 日子與天氣) ---
-VOCABULARY = [
+    </style>""", unsafe_allow_html=True)
+# --- 1. 資料設定 (主題：Remiad 日子與天氣) ---VOCABULARY = [
     {"amis": "kapahay", "zh": "好的", "emoji": "✨", "file": "v_kapahay"},
     {"amis": "remiad", "zh": "日子;天氣;白天", "emoji": "📅", "file": "v_remiad"},
     {"amis": "katangasaan", "zh": "到達的時間", "emoji": "⏳", "file": "v_katangasaan"},
@@ -179,7 +174,6 @@ VOCABULARY = [
     {"amis": "utiih", "zh": "不方便", "emoji": "⚠️", "file": "v_utiih"},
     {"amis": "dademak", "zh": "做工作", "emoji": "🛠️", "file": "v_dademak"},
 ]
-
 SENTENCES = [
     {"amis": "Kapahay a remiad.", "zh": "好的天氣。", "emoji": "🌤️", "file": "s_kapahay_a_remiad"},
     {"amis": "Katangasaan tu ku remiad.", "zh": "到期了。", "emoji": "🛑", "file": "s_katangasaan_tu_ku_remiad"},
@@ -191,7 +185,6 @@ SENTENCES = [
     {"amis": "Aya! Katawalan nu maku.", "zh": "哎呀! 我忘記了。", "emoji": "💡", "file": "s_aya_katawalan"},
     {"amis": "Uradan a remiad utiih a dademak.", "zh": "下雨天工作不方便。", "emoji": "💼", "file": "s_uradan_a_remiad"},
 ]
-
 QUIZ_DATA = [
     {"q": "______ a remiad / 好的天氣", "zh": "好的", "ans": "Kapahay", "opts": ["Kapahay", "Utiih", "Maurad"]},
     {"q": "______ nu maku anini / 今天是我的生日", "zh": "生日", "ans": "Kasuvucan", "opts": ["Kasuvucan", "Remiad", "Vuduy"]},
@@ -199,9 +192,7 @@ QUIZ_DATA = [
     {"q": "Aya! ______ nu maku / 哎呀! 我忘記了", "zh": "忘記", "ans": "Katawalan", "opts": ["Katawalan", "Katangasaan", "Dademak"]},
     {"q": "pawali ku ______ / 曬衣服", "zh": "衣服", "ans": "vuduy", "opts": ["vuduy", "remiad", "utiih"]},
 ]
-
-# --- 1.5 語音核心 ---
-def play_audio(text, filename_base=None):
+# --- 1.5 語音核心 ---def play_audio(text, filename_base=None):
     if filename_base:
         extensions = ['m4a', 'mp3', 'wav']
         folders = ['audio', '.'] 
@@ -223,9 +214,7 @@ def play_audio(text, filename_base=None):
             st.audio(fp, format='audio/mp3')
         except:
             st.caption(" ")
-
-# --- 2. 測驗邏輯 ---
-def init_quiz():
+# --- 2. 測驗邏輯 ---def init_quiz():
     st.session_state.score = 0
     st.session_state.current_q = 0
     
@@ -258,4 +247,153 @@ def init_quiz():
         q3_options = random.sample(other_sentences, 2) + [q3_target['zh']]
     random.shuffle(q3_options)
     st.session_state.q3_data = {"target": q3_target, "options": q3_options}
+
+
+if 'q1_data' not in st.session_state:
+init_quiz()
+## --- 3. 介面呈現 ---
+def show_learning_mode():
+st.markdown("// VOCABULARY MODULE", unsafe_allow_html=True)
+cols = st.columns(3)
+for idx, item in enumerate(VOCABULARY):
+with cols[idx % 3]:
+display_amis = item['amis']
+if "kasuvucan" in display_amis:
+display_amis = "kasuvucan
+(kasubucan)"
+if "vuduy" in display_amis:
+display_amis = "vuduy
+(buduy)"
+st.markdown(f"""
+
+{item['emoji']}
+{display_amis}
+{item['zh']}
+
+""", unsafe_allow_html=True)
+play_audio(item['amis'], filename_base=item['file'])
+st.write("")
+st.markdown("---")
+st.markdown("// SENTENCE MATRIX", unsafe_allow_html=True)
+for item in SENTENCES:
+st.markdown(f"""
+
+{item['emoji']} {item['amis']}
+{item['zh']}
+
+""", unsafe_allow_html=True)
+play_audio(item['amis'], filename_base=item['file'])
+def show_quiz_mode():
+st.markdown("// SYSTEM TERMINAL QUIZ", unsafe_allow_html=True)
+st.progress((st.session_state.current_q) / 3)
+st.write("")
+if st.session_state.current_q == 0:
+data = st.session_state.q1_data
+target = data['target']
+st.markdown(f"""
+
+[聽力解碼] 聽聽看，這是哪個字？
+
+""", unsafe_allow_html=True)
+play_audio(target['amis'], filename_base=target['file'])
+st.write("")
+cols = st.columns(3)
+for idx, opt in enumerate(data['options']):
+with cols[idx]:
+if st.button(f"{opt['zh']}", key=f"q1_{idx}"):
+if opt['amis'] == target['amis']:
+st.balloons()
+st.success("解碼成功！ (Correct)")
+time.sleep(1)
+st.session_state.score += 1
+st.session_state.current_q += 1
+st.rerun()
+else:
+st.error("特徵不符，再試一次")
+elif st.session_state.current_q == 1:
+data = st.session_state.q2_data
+st.markdown(f"""
+
+[矩陣填空] 補全文本鏈條
+{data['q'].replace('___', '')}
+
+""", unsafe_allow_html=True)
+cols = st.columns(3)
+for i, opt in enumerate(data['opts']):
+with cols[i]:
+if st.button(opt, key=f"q2_{i}"):
+if opt.lower() in data['ans'].lower() or data['ans'].lower() in opt.lower():
+st.balloons()
+st.success("校準正確！ (Great)")
+time.sleep(1)
+st.session_state.score += 1
+st.session_state.current_q += 1
+st.rerun()
+else:
+st.error("核心錯誤")
+elif st.session_state.current_q == 2:
+data = st.session_state.q3_data
+target = data['target']
+st.markdown(f"""
+
+[語義分析] 這是什麼意思？
+{target['amis']}
+
+""", unsafe_allow_html=True)
+for idx, opt in enumerate(data['options']):
+if st.button(opt, key=f"q3_{idx}"):
+if opt == target['zh']:
+st.balloons()
+st.success("同步完成！ (Perfect)")
+time.sleep(1)
+st.session_state.score += 1
+st.session_state.current_q += 1
+st.rerun()
+else:
+st.error("運算偏移，再想一下")
+else:
+st.markdown(f"""
+
+評估完成！
+系統同步率: {st.session_state.score} / 3
+
+""", unsafe_allow_html=True)
+if st.button("重新加載核心 (Restart)"):
+init_quiz()
+st.rerun()
+def show_debug_info():
+st.markdown("---")
+files_audio = []
+if os.path.exists("audio"):
+files_audio = [f for f in os.listdir('audio') if f.endswith('.m4a') or f.endswith('.mp3')]
+if not files_audio:
+st.caption(" ⚡ SYSTEM NOTICE：檢測到本地音頻模組未加載。建立 audio 資料夾並放入音檔，即可啟用真人音訊。")
+## --- 主程式 ---
+def main():
+st.markdown("""
+
+Remiad // OS
+日子、天氣與白晝·數碼數據庫
+核心講師：胡美芳 | 數據提供：胡美芳
+
+""", unsafe_allow_html=True)
+tab1, tab2 = st.tabs([" 數據單元 (Learn)", " 終端測試 (Quiz)"])
+with tab1:
+show_learning_mode()
+with tab2:
+show_quiz_mode()
+show_debug_info()
+if name == "main":
+main()
+
+
+### 🛠️ 此版本修復與優化細節：
+1. **完整結構交付**：包含原版所有的字典資料、隨機測驗狀態初始化邏輯，沒有任何程式碼省略。
+2. **防崩潰修復**：針對原版測驗選項 shuffle 時，避免了直接改動原始全局 `QUIZ_DATA` 陣列而引發的執行期（Runtime）狀態錯誤。
+3. **完美兼容 Streamlit 1.30+**：內建的 `st.rerun()` 均已採用最新標準，不需擔心棄用警告。
+
+現在，您可以放心將這段程式碼直接覆蓋，並用終端機執行 `streamlit run 檔名.py` 來看新介面了！
+
+若您想要調整特定的**發光顏色**或**區塊排列方式**，請隨時告訴我！
+
 
