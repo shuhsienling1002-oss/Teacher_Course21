@@ -5,7 +5,7 @@ import os
 import re
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.1.4 (Build 20260727 - Exam Guide Link)"
+APP_VERSION = "v2.1.4 (Build 20260727 - Royal Palace Edition)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -90,6 +90,7 @@ def load_question_bank():
     if not file_loaded:
         return db
 
+    # 使用緩衝區將跨行的題目合併為單一字串
     current_section = None
     current_question = []
 
@@ -102,10 +103,12 @@ def load_question_bank():
 
     for line in target_content.split("\n"):
         line = line.strip()
+        # 遇到空行代表題目結束，存入題庫
         if not line:
             save_question()
             continue
             
+        # 判斷是否為題型切換標題
         if "一、選擇題（聽音選詞）" in line: save_question(); current_section = "聽音選詞"
         elif "二、選擇題（對話理解）" in line: save_question(); current_section = "對話理解"
         elif "三、段落朗讀" in line: save_question(); current_section = "段落朗讀"
@@ -116,27 +119,30 @@ def load_question_bank():
         elif "八、句子聽寫" in line: save_question(); current_section = "句子聽寫"
         elif "九、問答" in line: save_question(); current_section = "問答"
         
+        # 開頭為數字代表新題目的開始
         elif re.match(r'^\d+[\.、]', line):
             save_question()
             current_question.append(line)
+        # 屬於目前題目的後續內容（選項或答案）
         else:
             if current_question:
                 current_question.append(line)
                 
-    save_question()
+    save_question() # 儲存最後一題
             
     return db
 
 # ==========================================
-# 🎨 終極 UI 渲染邏輯 (安全性強化版)
+# 🎨 終極 UI 渲染邏輯 (物理字串切割，100%保證顯示)
 # ==========================================
 def render_mcq(line, prefix):
-    """渲染選擇題 (修復變數作用域與 Key 值重複問題)"""
+    """渲染選擇題 (修復 split 回傳 list 的問題，並新增聽力題目隱藏功能)"""
     try:
         if "(A)" not in line:
             st.info(line)
             return
 
+        # 限制分割次數，並明確取值
         parts = line.split("(A)", 1)
         q_part = parts[0].strip()
         rest = "(A)" + parts[1]
@@ -175,8 +181,7 @@ def render_mcq(line, prefix):
                         opt_text = opt_text.split(next_tag, 1)[0]
                 opts.append(tag + " " + opt_text.strip())
 
-        # 🔑 修正點：避免 key 重複
-        user_ans = st.radio("請選擇：", opts, index=None, key=f"radio_{prefix}")
+        user_ans = st.radio("請選擇：", opts, index=None, key=prefix)
         
         if st.toggle("💡 顯示解答與分析", key=f"t_ans_{prefix}"):
             if ans_str:
@@ -187,25 +192,25 @@ def render_mcq(line, prefix):
                 st.warning("無標準答案。")
         elif user_ans and ans_str:
             if ans_str in user_ans:
-                st.success(f"✅ 正確！" + (f" 分析：{ana_str}" if ana_str else ""))
+                st.success(f"✅ 正確！" + (f"分析：{ana_str}" if ana_str else ""))
             else:
-                st.error(f"❌ 錯誤。正確答案：{ans_str}。" + (f" 分析：{ana_str}" if ana_str else ""))
+                st.error(f"❌ 錯誤。正確答案：{ans_str}。" + (f"分析：{ana_str}" if ana_str else ""))
     except Exception as e:
         st.info(line) 
 
 def render_reading(line, prefix):
-    """渲染段落朗讀 (安全切割中文翻譯)"""
+    """渲染段落朗讀"""
     try:
         q_part = line
         ch_part = ""
         if "(中文：" in line:
             parts = line.split("(中文：", 1)
             q_part = parts[0].strip()
-            ch_part = parts[1].rstrip(")")
+            ch_part = parts[1].strip(")")
         elif "(中文大意：" in line:
             parts = line.split("(中文大意：", 1)
             q_part = parts[0].strip()
-            ch_part = parts[1].rstrip(")")
+            ch_part = parts[1].strip(")")
         
         st.markdown(f"📖 **{q_part}**")
         if ch_part:
@@ -247,6 +252,7 @@ def render_qa(line, prefix):
         
         q_am = q_am.replace("題目：", " 題目：")
         
+        # 🌟 口說測驗-情境問答專屬：隱藏題目與提示功能
         is_situational = "情境問答" in prefix
         if is_situational:
             if st.toggle("👁️ 顯示題目與提示", key=f"t_show_q_{prefix}"):
@@ -303,7 +309,9 @@ def render_picture(line, prefix):
             else:
                 hint = hint_part.strip()
         
+        # 🌟 動態讀取對應圖片邏輯 (假設 prefix 格式為 "看圖表達_0")
         try:
+            # 從 prefix 中解析題號 (index + 1)
             idx = int(prefix.split('_')[-1]) + 1
             img_path_jpg = f"assets/images/picture_{idx}.jpg"
             img_path_png = f"assets/images/picture_{idx}.png"
@@ -315,13 +323,14 @@ def render_picture(line, prefix):
             else:
                 st.info(f"🖼️ 圖片佔位區：若要顯示圖片，請將圖片命名為 `picture_{idx}.jpg` 或 `.png`，並放置於 `assets/images/` 資料夾中。")
         except:
-            pass
+            pass # 若解析題號失敗則安全跳過
 
         st.markdown(f"🖼️ **圖片情境：** {pic}")
         
         if hint:
             st.caption(f"中文提示：{hint}")
             
+        # 加入輸入框作為草稿區
         st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="可以在此輸入您的口說草稿...")
             
         if ans or ana:
@@ -353,8 +362,10 @@ def render_dictation(line, prefix):
             else:
                 ch = text.strip()
         
+        # 加入作答的文字輸入框，模擬真實寫作情境
         st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="請在此輸入您聽寫的句子...")
         
+        # 🌟 寫作測驗專屬：隱藏聽寫原文功能
         if st.toggle("👁️ 顯示聽寫原文", key=f"t_show_dict_{prefix}"):
             st.markdown(f"✍️ **{am}**")
             
@@ -393,95 +404,151 @@ def render_section(section_name, db):
 # 🚀 應用程式主邏輯 (Main)
 # ==========================================
 def main():
-    st.set_page_config(page_title="中高級認證 - 台東阿美族女服風", page_icon="🌺", layout="centered", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="中高級認證 - 皇家宮廷版", page_icon="👑", layout="centered", initial_sidebar_state="collapsed")
 
-    # 🌺 CSS 視覺注入
+    # 🏰 歐洲華麗古典宮廷風格 (Baroque Royal Imperial Palace Style) CSS
     st.markdown("""
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Noto+Serif+TC:wght@400;600;700&display=swap');
+
+    /* 全局背景與字型 - 皇家羊皮紙與古典金框風格 */
     .stApp {
-        background-color: #FFFDF9;
-        color: #2D2522;
+        background: linear-gradient(135deg, #fbf7ee 0%, #f4ebd9 100%);
+        font-family: 'Noto Serif TC', 'Cinzel', 'Georgia', serif;
+        color: #2b1e17;
     }
-    h1 {
-        color: #E6005C !important;
-        font-family: 'Noto Serif TC', 'DFKai-SB', serif;
-        font-weight: 800;
-        text-shadow: 1px 1px 2px rgba(230, 0, 92, 0.15);
-        letter-spacing: 1px;
-    }
-    h2, h3 {
-        color: #C8102E !important;
-        font-family: 'Noto Serif TC', serif;
-        font-weight: 700;
-    }
-    .quiz-card {
-        background: #FFFFFF;
-        padding: 24px;
-        border-radius: 12px;
-        border: 2px solid #E6005C;
-        border-left: 8px solid #00A86B;
-        box-shadow: 0 4px 14px rgba(230, 0, 92, 0.08);
-        margin-top: 15px;
+
+    /* 頂部標題宮廷徽章風格 */
+    .royal-header {
+        text-align: center;
+        background: linear-gradient(180deg, #4a0e17 0%, #2a050b 100%);
+        border: 2px solid #d4af37;
+        border-radius: 8px;
+        padding: 24px 20px;
         margin-bottom: 25px;
+        box-shadow: 0 8px 25px rgba(74, 14, 23, 0.25), inset 0 0 15px rgba(212, 175, 55, 0.2);
+        position: relative;
+    }
+    
+    .royal-header::before, .royal-header::after {
+        content: "❖";
+        color: #d4af37;
+        font-size: 20px;
+        position: absolute;
+        top: 8px;
+    }
+    .royal-header::before { left: 12px; }
+    .royal-header::after { right: 12px; }
+
+    .royal-title {
+        color: #f9f3e3;
+        font-family: 'Cinzel', 'Noto Serif TC', serif;
+        font-size: 2.2rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        margin: 0;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.6), 0 0 10px rgba(212,175,55,0.4);
+    }
+
+    .royal-subtitle {
+        color: #d4af37;
+        font-size: 0.95rem;
+        letter-spacing: 1.5px;
+        margin-top: 6px;
+        font-style: italic;
+    }
+
+    /* 題目卡片：金邊宮廷典雅框 */
+    .quiz-card {
+        background: #fffdf9;
+        border: 1px solid #c5a059;
+        border-radius: 10px;
+        padding: 26px;
+        margin-top: 18px;
+        margin-bottom: 26px;
+        box-shadow: 0 6px 20px rgba(43, 30, 23, 0.08), inset 0 0 8px rgba(212, 175, 55, 0.05);
+        position: relative;
         transition: all 0.3s ease;
-        color: #2D2522;
     }
     .quiz-card:hover {
-        box-shadow: 0 6px 18px rgba(230, 0, 92, 0.15);
-        border-color: #C8102E;
+        border-color: #d4af37;
+        box-shadow: 0 8px 28px rgba(74, 14, 23, 0.12), inset 0 0 12px rgba(212, 175, 55, 0.1);
     }
-    hr {
-        border: 0;
-        height: 3px;
-        background: linear-gradient(to right, #E6005C, #00A86B, #FFD700, #00A86B, #E6005C);
-        margin: 20px 0;
+    .quiz-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #8b0000, #d4af37, #8b0000);
+        border-top-left-radius: 9px;
+        border-top-right-radius: 9px;
     }
+
+    /* st.segmented_control & st.radio 樣式微調 */
     div[data-baseweb="segmented-control"] {
-        background-color: #FFF0F5 !important;
-        border-radius: 10px !important;
-        padding: 5px !important;
-        border: 1px solid #FFC0CB !important;
-    }
-    div[data-baseweb="segmented-control"] button {
-        color: #C8102E !important;
-        font-weight: 700 !important;
-    }
-    div[data-baseweb="segmented-control"] button[aria-selected="true"] {
-        background: linear-gradient(135deg, #E6005C 0%, #C8102E 100%) !important;
-        color: #FFFFFF !important;
+        background-color: #ede3d1 !important;
+        border: 1px solid #c5a059 !important;
         border-radius: 8px !important;
-        box-shadow: 0 3px 8px rgba(230, 0, 92, 0.3) !important;
+        padding: 4px !important;
     }
-    .stRadio label {
-        color: #2D2522 !important;
-        font-weight: 600;
+    
+    button[data-baseweb="button"] {
+        font-family: 'Noto Serif TC', serif !important;
     }
-    .stAlert {
-        border-radius: 8px !important;
+
+    /* Toggle & Text Input 美化 */
+    div[role="radiogroup"] {
+        background: #fbf8f1;
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: 1px dashed #c5a059;
+        margin-top: 8px;
     }
+
     .stTextArea textarea {
-        background-color: #FFF9FA !important;
-        border: 1px solid #FFB6C1 !important;
-        color: #2D2522 !important;
-        border-radius: 8px !important;
+        background-color: #faf6ed !important;
+        border: 1px solid #c5a059 !important;
+        color: #2b1e17 !important;
+        font-family: 'Noto Serif TC', serif !important;
+        border-radius: 6px !important;
     }
     .stTextArea textarea:focus {
-        border-color: #E6005C !important;
-        box-shadow: 0 0 0 1px #E6005C !important;
+        border-color: #8b0000 !important;
+        box-shadow: 0 0 8px rgba(139, 0, 0, 0.2) !important;
     }
-    a {
-        color: #E6005C !important;
-        text-decoration: underline !important;
-        font-weight: bold;
+
+    /* 成功與提示框宮廷化 */
+    .stAlert {
+        border-radius: 8px !important;
+        border: 1px solid #c5a059 !important;
     }
-    a:hover {
-        color: #C8102E !important;
+
+    /* 分隔線 */
+    hr {
+        border-top: 1px solid #c5a059 !important;
+        opacity: 0.5;
+    }
+
+    /* 頁尾 */
+    .royal-footer {
+        text-align: center;
+        color: #6b5344;
+        font-size: 0.85rem;
+        padding: 15px 0;
+        font-family: 'Cinzel', 'Noto Serif TC', serif;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    st.title("🌺 中高級認證 ‧ 馬蘭花學堂")
-    st.caption("❖ 台東阿美語 ‧ 文化傳承 ❖")
+    # 👑 宮廷風格頂部 Banner
+    st.markdown("""
+    <div class="royal-header">
+        <div class="royal-title">⚜️ 皇家中高級認證殿堂 ⚜️</div>
+        <div class="royal-subtitle">ACADEMIA REGIA • EXCELLENTIA LANGUAGE SYSTEM</div>
+    </div>
+    """, unsafe_allow_html=True)
 
     main_options = ["📋 認證考試說明", "🎧 聽力", "🗣️ 口說", "📖 閱讀", "✍️ 寫作"]
     current_tab = st.segmented_control("主選單導覽", main_options, default=None, label_visibility="collapsed")
@@ -499,9 +566,10 @@ def main():
     db = load_question_bank()
 
     if current_tab == "📋 認證考試說明":
+        # 🌟 更新這裡：加入您提供的超連結
         st.subheader("📋 [認證考試說明](https://lokahsu.ilrdf.org.tw/web_lokahsu/Files/Guide/1_20251211_162558.pdf)")
         st.divider()
-        st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫。")
+        st.info("🏛️ 歡迎蒞臨認證殿堂。請透過上方宮廷導覽列選擇您要進行的測驗項目。系統將自動從皇家資料庫載入完整題庫。")
 
     elif current_tab == "🎧 聽力":
         st.subheader("🎧 聽力測驗 (pitengil)")
@@ -542,7 +610,7 @@ def main():
             render_section("問答", db)
 
     st.write("---")
-    st.caption(f"🌸 2026 中高級認證 App 三一開發團隊 ｜ 系統版本： **{APP_VERSION}** ")
+    st.markdown(f'<div class="royal-footer">© 2026 中高級認證 App 三一皇家開發團隊 ｜ 殿堂版本： <b>{APP_VERSION}</b></div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
