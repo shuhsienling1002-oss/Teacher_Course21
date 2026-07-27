@@ -5,7 +5,7 @@ import os
 import re
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.1.4 (Build 20260727 - Exam Guide Link)"
+APP_VERSION = "v2.1.5 (Build 20260727 - Indigenous Style)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -404,59 +404,79 @@ def render_section(section_name, db):
 # 🚀 應用程式主邏輯 (Main)
 # ==========================================
 def main():
-    st.set_page_config(page_title="中高級認證", page_icon="🌲", layout="centered", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="中高級認證", page_icon="🎓", layout="centered", initial_sidebar_state="collapsed")
 
-    # 🌲 莫蘭迪森林風格 (Forest / Sage Green Style) CSS
+    # 🌺 原住民文化風格佈景主題 CSS (完美適應 Light / Dark 模式)
     st.markdown("""
     <style>
-    /* 全域背景與文字調性 */
-    .stApp {
-        background-color: #F4F6F4;
-        color: #2D3B32;
-    }
+    /* 核心原住民風格設計：大地色系、陶紅、琉璃珠綠、織布幾何線條邊框與雙模式適應 */
     
-    /* 主標題與次標題配色 */
-    h1, h2, h3, .stSubheader {
-        color: #1E3323 !important;
-        font-weight: 600;
-    }
-    
-    /* 測驗題目卡片設計 */
     .quiz-card {
-        background-color: #FFFFFF;
         padding: 24px;
-        border-radius: 16px;
-        border: 1px solid #D1DDD3;
-        box-shadow: 0 4px 12px rgba(45, 59, 50, 0.05);
+        border-radius: 12px;
         margin-top: 15px;
         margin-bottom: 25px;
         transition: all 0.3s ease;
-        color: #2D3B32;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border-left: 6px solid #C85A32; /* 經典陶紅邊條裝飾 */
     }
-    .quiz-card:hover {
-        border-color: #8CA391;
-        box-shadow: 0 6px 16px rgba(45, 59, 50, 0.08);
+
+    /* 💡 Light 模式風格 */
+    @media (prefers-color-scheme: light) {
+        .quiz-card {
+            background-color: #FAF6F0; /* 暖米色羊皮紙底 */
+            border: 1px solid #E3D5C6;
+            border-left: 6px solid #C85A32;
+            color: #2C221E;
+        }
     }
-    
-    /* 分隔線 */
+
+    /* 🌙 Dark 模式風格 */
+    @media (prefers-color-scheme: dark) {
+        .quiz-card {
+            background-color: #1F1B18; /* 深色大地黑灰 */
+            border: 1px solid #3D322C;
+            border-left: 6px solid #E2725B;
+            color: #F4EBE1;
+        }
+    }
+
+    /* Streamlit 自動適應類別相容支援 */
+    [data-theme="light"] .quiz-card {
+        background-color: #FAF6F0;
+        border: 1px solid #E3D5C6;
+        border-left: 6px solid #C85A32;
+        color: #2C221E;
+    }
+
+    [data-theme="dark"] .quiz-card {
+        background-color: #1F1B18;
+        border: 1px solid #3D322C;
+        border-left: 6px solid #E2725B;
+        color: #F4EBE1;
+    }
+
+    /* 標題與裝飾線條優化 */
+    h1, h2, h3 {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        letter-spacing: 0.5px;
+    }
+
     hr { 
-        border-top: 1px solid #C4D3C7; 
+        border-top: 2px dashed #C85A32; 
+        opacity: 0.4;
+        margin: 25px 0;
     }
     
-    /* 連結顏色 */
-    a {
-        color: #3B6043 !important;
-        font-weight: bold;
-    }
-    
-    /* 提示與訊息框主題調整 */
-    .stAlert {
-        border-radius: 10px;
+    /* 按鈕與互動元件微調 */
+    .stButton > button {
+        border-radius: 8px;
+        font-weight: 600;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    st.title("🌲 中高級認證")
+    st.title("🎓 中高級認證")
     st.caption("[請選擇練習平台]")
 
     main_options = ["📋 認證考試說明", "🎧 聽力", "🗣️ 口說", "📖 閱讀", "✍️ 寫作"]
