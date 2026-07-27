@@ -5,7 +5,7 @@ import os
 import re
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.1.5 (Build 20260727 - Indigenous Style)"
+APP_VERSION = "v2.1.4 (Build 20260727 - Exam Guide Link)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -401,77 +401,54 @@ def render_section(section_name, db):
             st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# 🚀 應用程式主邏輯 (Main)
+# 🚀 應用程式主邏輯 (Main) - 現代極簡風格 (Minimalist Style)
 # ==========================================
 def main():
     st.set_page_config(page_title="中高級認證", page_icon="🎓", layout="centered", initial_sidebar_state="collapsed")
 
-    # 🌺 原住民文化風格佈景主題 CSS (完美適應 Light / Dark 模式)
+    # 現代極簡質感 (Clean Minimalist Design) CSS
     st.markdown("""
     <style>
-    /* 核心原住民風格設計：大地色系、陶紅、琉璃珠綠、織布幾何線條邊框與雙模式適應 */
-    
-    .quiz-card {
-        padding: 24px;
-        border-radius: 12px;
-        margin-top: 15px;
-        margin-bottom: 25px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        border-left: 6px solid #C85A32; /* 經典陶紅邊條裝飾 */
+    /* 全局背景與字型設定 */
+    .stApp {
+        background-color: #FAFAFA;
+        color: #1F2937;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
 
-    /* 💡 Light 模式風格 */
-    @media (prefers-color-scheme: light) {
-        .quiz-card {
-            background-color: #FAF6F0; /* 暖米色羊皮紙底 */
-            border: 1px solid #E3D5C6;
-            border-left: 6px solid #C85A32;
-            color: #2C221E;
-        }
-    }
-
-    /* 🌙 Dark 模式風格 */
-    @media (prefers-color-scheme: dark) {
-        .quiz-card {
-            background-color: #1F1B18; /* 深色大地黑灰 */
-            border: 1px solid #3D322C;
-            border-left: 6px solid #E2725B;
-            color: #F4EBE1;
-        }
-    }
-
-    /* Streamlit 自動適應類別相容支援 */
-    [data-theme="light"] .quiz-card {
-        background-color: #FAF6F0;
-        border: 1px solid #E3D5C6;
-        border-left: 6px solid #C85A32;
-        color: #2C221E;
-    }
-
-    [data-theme="dark"] .quiz-card {
-        background-color: #1F1B18;
-        border: 1px solid #3D322C;
-        border-left: 6px solid #E2725B;
-        color: #F4EBE1;
-    }
-
-    /* 標題與裝飾線條優化 */
+    /* 標題樣式 */
     h1, h2, h3 {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        letter-spacing: 0.5px;
+        color: #111827 !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.02em;
     }
 
-    hr { 
-        border-top: 2px dashed #C85A32; 
-        opacity: 0.4;
-        margin: 25px 0;
+    /* 題目卡片：白底、俐落微邊框與極輕陰影 */
+    .quiz-card {
+        background-color: #FFFFFF;
+        padding: 20px 24px;
+        border-radius: 10px;
+        border: 1px solid #E5E7EB;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        margin-top: 16px;
+        margin-bottom: 20px;
+        transition: border-color 0.2s ease;
     }
-    
-    /* 按鈕與互動元件微調 */
-    .stButton > button {
-        border-radius: 8px;
-        font-weight: 600;
+
+    .quiz-card:hover {
+        border-color: #D1D5DB;
+    }
+
+    /* 分隔線 */
+    hr {
+        border-top: 1px solid #E5E7EB !important;
+        margin: 20px 0 !important;
+    }
+
+    /* 頁尾文字 */
+    .caption-text {
+        color: #6B7280;
+        font-size: 0.85rem;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -495,6 +472,7 @@ def main():
     db = load_question_bank()
 
     if current_tab == "📋 認證考試說明":
+        # 🌟 更新這裡：加入您提供的超連結[cite: 2]
         st.subheader("📋 [認證考試說明](https://lokahsu.ilrdf.org.tw/web_lokahsu/Files/Guide/1_20251211_162558.pdf)")
         st.divider()
         st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫。")
