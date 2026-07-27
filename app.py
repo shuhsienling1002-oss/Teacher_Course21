@@ -1,11 +1,11 @@
-import streamlit as st
+code_content = """import streamlit as st
 import random
 import json
 import os
 import re
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.1.4 (Build 20260727 - Exam Guide Link)"
+APP_VERSION = "v2.1.4 (Build 20260727 - Exam Guide Link & European Court Style)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -97,11 +97,11 @@ def load_question_bank():
     def save_question():
         if current_section and current_question:
             q_text = " ".join(current_question).strip()
-            if re.match(r'^\d+[\.、]', q_text):
+            if re.match(r'^\\d+[\\.\\、]', q_text):
                 db[current_section].append(q_text)
             current_question.clear()
 
-    for line in target_content.split("\n"):
+    for line in target_content.split("\\n"):
         line = line.strip()
         # 遇到空行代表題目結束，存入題庫
         if not line:
@@ -120,7 +120,7 @@ def load_question_bank():
         elif "九、問答" in line: save_question(); current_section = "問答"
         
         # 開頭為數字代表新題目的開始
-        elif re.match(r'^\d+[\.、]', line):
+        elif re.match(r'^\\d+[\\.\\、]', line):
             save_question()
             current_question.append(line)
         # 屬於目前題目的後續內容（選項或答案）
@@ -136,7 +136,7 @@ def load_question_bank():
 # 🎨 終極 UI 渲染邏輯 (物理字串切割，100%保證顯示)
 # ==========================================
 def render_mcq(line, prefix):
-    """渲染選擇題 (修復 split 回傳 list 的問題，並新增聽力題目隱藏功能)"""
+    \"\"\"渲染選擇題 (修復 split 回傳 list 的問題，並新增聽力題目隱藏功能)\"\"\"
     try:
         if "(A)" not in line:
             st.info(line)
@@ -186,7 +186,7 @@ def render_mcq(line, prefix):
         if st.toggle("💡 顯示解答與分析", key=f"t_ans_{prefix}"):
             if ans_str:
                 msg = f"**正確答案：** {ans_str}"
-                if ana_str: msg += f"\n\n**分析：** {ana_str}"
+                if ana_str: msg += f"\\n\\n**分析：** {ana_str}"
                 st.success(msg)
             else:
                 st.warning("無標準答案。")
@@ -199,7 +199,7 @@ def render_mcq(line, prefix):
         st.info(line) 
 
 def render_reading(line, prefix):
-    """渲染段落朗讀"""
+    \"\"\"渲染段落朗讀\"\"\"
     try:
         q_part = line
         ch_part = ""
@@ -220,7 +220,7 @@ def render_reading(line, prefix):
         st.info(line)
 
 def render_qa(line, prefix):
-    """渲染問答與情境問答"""
+    \"\"\"渲染問答與情境問答\"\"\"
     try:
         text = line
         q_am = text
@@ -268,13 +268,13 @@ def render_qa(line, prefix):
             if st.toggle("💡 顯示參考解答", key=f"t_{prefix}"):
                 msg = ""
                 if ans: msg += f"參考解答：{ans}"
-                if ana: msg += f"\n\n分析：{ana}"
+                if ana: msg += f"\\n\\n分析：{ana}"
                 st.success(msg)
     except:
         st.info(line)
 
 def render_picture(line, prefix):
-    """渲染看圖表達，並支援動態載入對應題號圖片"""
+    \"\"\"渲染看圖表達，並支援動態載入對應題號圖片\"\"\"
     try:
         text = line
         pic = text
@@ -337,13 +337,13 @@ def render_picture(line, prefix):
             if st.toggle("💡 顯示作答參考", key=f"t_{prefix}"):
                 msg = ""
                 if ans: msg += f"作答參考：{ans}"
-                if ana: msg += f"\n\n重點：{ana}"
+                if ana: msg += f"\\n\\n重點：{ana}"
                 st.success(msg)
     except:
         st.info(line)
 
 def render_dictation(line, prefix):
-    """渲染句子聽寫"""
+    \"\"\"渲染句子聽寫\"\"\"
     try:
         text = line
         am = text
@@ -373,13 +373,13 @@ def render_dictation(line, prefix):
             if st.toggle("💡 顯示翻譯與分析", key=f"t_{prefix}"):
                 msg = ""
                 if ch: msg += f"中文：{ch}"
-                if ana: msg += f"\n\n分析：{ana}"
+                if ana: msg += f"\\n\\n分析：{ana}"
                 st.success(msg)
     except:
         st.info(line)
 
 def render_section(section_name, db):
-    """通用區塊渲染器"""
+    \"\"\"通用區塊渲染器\"\"\"
     questions = db.get(section_name, [])
     if not questions:
         st.warning(f"⚠️ 系統抓不到【{section_name}】的資料。")
@@ -401,57 +401,84 @@ def render_section(section_name, db):
             st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# 🚀 應用程式主邏輯 (Main) - 現代極簡風格 (Minimalist Style)
+# 🚀 應用程式主邏輯 (Main)
 # ==========================================
 def main():
     st.set_page_config(page_title="中高級認證", page_icon="🎓", layout="centered", initial_sidebar_state="collapsed")
 
-    # 現代極簡質感 (Clean Minimalist Design) CSS
-    st.markdown("""
+    # 🏰 歐洲宮廷風格 (European Court Style) CSS
+    st.markdown(\"\"\"
     <style>
-    /* 全局背景與字型設定 */
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Playfair Display', "Microsoft JhengHei", serif;
+    }
+
+    /* 背景與整體色調 */
     .stApp {
-        background-color: #FAFAFA;
-        color: #1F2937;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background-color: #FAF4E8; /* 羊皮紙色 */
+        background-image: 
+            radial-gradient(#E8DCC4 1px, transparent 1px),
+            radial-gradient(#E8DCC4 1px, transparent 1px);
+        background-size: 20px 20px;
+        background-position: 0 0, 10px 10px;
     }
 
-    /* 標題樣式 */
-    h1, h2, h3 {
-        color: #111827 !important;
-        font-weight: 600 !important;
-        letter-spacing: -0.02em;
-    }
-
-    /* 題目卡片：白底、俐落微邊框與極輕陰影 */
+    /* 測驗卡片設計 - 宮廷風 */
     .quiz-card {
-        background-color: #FFFFFF;
-        padding: 20px 24px;
+        background: linear-gradient(145deg, #FFFFFF, #FDF8ED);
+        padding: 28px;
+        border-radius: 16px;
+        border: 2px solid #D4AF37; /* 宮廷金 */
+        box-shadow: 0 10px 25px rgba(139, 115, 85, 0.15), 
+                    inset 0 0 15px rgba(212, 175, 55, 0.1);
+        margin-top: 20px;
+        margin-bottom: 30px;
+        transition: all 0.3s ease;
+        color: #3E2723; /* 深原木色/深褐色 */
+        position: relative;
+    }
+
+    /* 卡片內部的精緻虛線框 */
+    .quiz-card::before {
+        content: '';
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+        border: 1px dashed #D4AF37;
         border-radius: 10px;
-        border: 1px solid #E5E7EB;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-        margin-top: 16px;
-        margin-bottom: 20px;
-        transition: border-color 0.2s ease;
+        pointer-events: none;
     }
 
+    /* 卡片hover效果 */
     .quiz-card:hover {
-        border-color: #D1D5DB;
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(139, 115, 85, 0.25), 
+                    inset 0 0 15px rgba(212, 175, 55, 0.2);
     }
 
-    /* 分隔線 */
-    hr {
-        border-top: 1px solid #E5E7EB !important;
-        margin: 20px 0 !important;
+    /* 分隔線 - 金色質感 */
+    hr { 
+        border-top: 2px solid #D4AF37; 
+        box-shadow: 0 1px 3px rgba(212, 175, 55, 0.4);
+        margin: 2em 0;
     }
-
-    /* 頁尾文字 */
-    .caption-text {
-        color: #6B7280;
-        font-size: 0.85rem;
+    
+    /* 強調文字與標題顏色 */
+    h1, h2, h3, .stMarkdown strong {
+        color: #800020 !important; /* 勃根地酒紅 */
+    }
+    
+    /* 成功與提示框顏色微調 */
+    .st-emotion-cache-1ghhuty {
+        background-color: rgba(212, 175, 55, 0.1);
+        border: 1px solid #D4AF37;
     }
     </style>
-    """, unsafe_allow_html=True)
+    \"\"\", unsafe_allow_html=True)
 
     st.title("🎓 中高級認證")
     st.caption("[請選擇練習平台]")
@@ -472,7 +499,7 @@ def main():
     db = load_question_bank()
 
     if current_tab == "📋 認證考試說明":
-        # 🌟 更新這裡：加入您提供的超連結[cite: 2]
+        # 🌟 更新這裡：加入您提供的超連結
         st.subheader("📋 [認證考試說明](https://lokahsu.ilrdf.org.tw/web_lokahsu/Files/Guide/1_20251211_162558.pdf)")
         st.divider()
         st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫。")
@@ -520,3 +547,10 @@ def main():
 
 if __name__ == "__main__":
     main()
+"""
+
+with open("european_court_style_app.py", "w", encoding="utf-8") as f:
+    f.write(code_content)
+with open("european_court_style_app.txt", "w", encoding="utf-8") as f:
+    f.write(code_content)
+print("Files successfully generated.")
