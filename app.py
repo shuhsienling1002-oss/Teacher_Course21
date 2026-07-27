@@ -49,9 +49,8 @@ QUIZ_DATA = [
 # ==========================================
 # 🧠 動態解析引擎：自動讀取並結構化題庫文字檔
 # ==========================================
-@st.cache_data
+# ⚠️ 這裡刻意移除了 @st.cache_data 裝飾器，強迫雲端每次重新讀取，避免它記住失敗的快取
 def load_question_bank(filepath="各類題目.txt"):
-    # 🌟 關鍵修正：動態取得 app.py 當前所在的資料夾絕對路徑
     base_dir = os.path.dirname(os.path.abspath(__file__))
     actual_filepath = os.path.join(base_dir, filepath)
 
@@ -60,12 +59,15 @@ def load_question_bank(filepath="各類題目.txt"):
         "看圖表達": [], "詞彙語意": [], "語言結構": [], "句子聽寫": [], "問答": []
     }
     
-    # 🌟 改用 actual_filepath 進行防禦性偵測
+    # 🌟 終極防禦性偵測：如果找不到，就把伺服器上的檔案全列出來給你看！
     if not os.path.exists(actual_filepath):
+        try:
+            db["_debug_files"] = os.listdir(base_dir)
+        except Exception as e:
+            db["_debug_files"] = [f"無法讀取資料夾內容: {e}"]
         return db
 
     current_section = None
-    # 🌟 改用 actual_filepath 開啟檔案
     with open(actual_filepath, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -172,6 +174,9 @@ def render_section(section_name, db):
     questions = db.get(section_name, [])
     if not questions:
         st.warning(f"⚠️ 找不到題庫資料，請確認 **『各類題目.txt』** 是否與本程式放在同一個資料夾。")
+        # 🚀 顯示給使用者的抓蟲 (Debug) 畫面
+        if "_debug_files" in db:
+            st.error(f"🔍 **【系統路徑偵錯】**\n\n系統正在伺服器的這個位置尋找：\n`{os.path.dirname(os.path.abspath(__file__))}`\n\n但目前伺服器只看到以下檔案：\n`{db['_debug_files']}`\n\n💡 **解決提示：** 請仔細比對上面的清單，確認您 GitHub 上的檔名是否不小心變成了 `各類題目.txt.txt`，或者是大小寫有任何差異！")
         return
 
     for i, line in enumerate(questions):
@@ -228,7 +233,7 @@ def main():
             st.session_state.writing_submitted = False
         st.session_state.previous_tab = current_tab
 
-    # 載入動態題庫庫
+    # 載入動態題庫庫 (移除快取版)
     db = load_question_bank()
 
     ### ---- 第二層：根據選擇顯示對應架構 ----
@@ -236,6 +241,9 @@ def main():
         st.subheader("📋 認證考試說明")
         st.divider()
         st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從 `各類題目.txt` 載入完整題庫。")
+        # 額外在說明頁面也顯示一下偵錯結果
+        if "_debug_files" in db:
+            st.error(f"系統異常：找不到題庫。伺服器當前檔案清單：{db['_debug_files']}")
 
     elif current_tab == "🎧 聽力":
         st.subheader("🎧 聽力測驗 (pitengil)")
