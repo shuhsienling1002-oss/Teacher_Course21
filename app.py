@@ -5,7 +5,7 @@ import os
 import re
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.0.1 (Build 20260727 - Optimized)"
+APP_VERSION = "v2.1.0 (Build 20260727 - Listening Hidden)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -28,6 +28,7 @@ def show_quiz_mode():
 def show_debug_info(): 
     pass
 
+# 原始聽力題庫 (15題標準數據庫，完全保留)
 QUIZ_DATA = [
     {"id": 1, "audio_path": "assets/audio/01_listening/listening_words/tengil-a1-01.mp3", "question_text": "聆聽音檔，選出關聯的詞彙：", "options": ["riyar", "'alo", "fanaw", "sa'owac"], "correct_text": "riyar"},
     {"id": 2, "audio_path": "assets/audio/01_listening/listening_words/tengil-a1-02.mp3", "question_text": "聆聽音檔，選出關聯的詞彙：", "options": ["korkor", "rohayan", "romakat", "rotarot"], "correct_text": "romakat"},
@@ -135,7 +136,7 @@ def load_question_bank():
 # 🎨 終極 UI 渲染邏輯 (物理字串切割，100%保證顯示)
 # ==========================================
 def render_mcq(line, prefix):
-    """渲染選擇題 (修復 split 回傳 list 的問題)"""
+    """渲染選擇題 (修復 split 回傳 list 的問題，並新增聽力題目隱藏功能)"""
     try:
         if "(A)" not in line:
             st.info(line)
@@ -162,7 +163,13 @@ def render_mcq(line, prefix):
             else:
                 ans_str = ans_ana.strip("。 ")
 
-        st.markdown(f"**{q_part}**")
+        # 🌟 聽力測驗專屬：隱藏題目文字功能
+        is_listening = "聽音選詞" in prefix or "對話理解" in prefix
+        if is_listening:
+            if st.toggle("👁️ 顯示題目文字", key=f"t_show_q_{prefix}"):
+                st.markdown(f"**{q_part}**")
+        else:
+            st.markdown(f"**{q_part}**")
         
         # 安全切割四個選項
         opts = []
