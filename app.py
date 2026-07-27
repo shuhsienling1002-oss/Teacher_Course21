@@ -127,7 +127,7 @@ def render_section(section_name, db):
 def main():
     st.set_page_config(page_title="中高級認證", page_icon="🎓", layout="centered", initial_sidebar_state="collapsed")
     
-    # 🆕 APP 風格修改區塊 (新增 CSS，不改變原有任何功能)
+    # 👇 純粹用來改變外觀風格的 CSS 語法 👇
     st.markdown("""
     <style>
     /* 改變整體背景顏色為淺象牙色，增添溫暖柔和感 */
@@ -164,6 +164,7 @@ def main():
     }
     </style>
     """, unsafe_allow_html=True)
+    # 👆 風格修改結束 👆
 
 if __name__ == "__main__":
     main()
