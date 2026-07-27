@@ -5,7 +5,7 @@ import os
 import re
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.1.4 (Build 20260727 - Exam Guide Link)"
+APP_VERSION = "v2.1.4 (Build 20260727 - Sky & Cloud Theme)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -401,88 +401,83 @@ def render_section(section_name, db):
             st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# 🚀 應用程式主邏輯 (Main) - 海洋原民風格
+# 🚀 應用程式主邏輯 (Main)
 # ==========================================
 def main():
-    st.set_page_config(page_title="中高級認證 - 海洋原民風", page_icon="🌊", layout="centered", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="中高級認證", page_icon="☁️", layout="centered", initial_sidebar_state="collapsed")
 
-    # 🌊 海洋原民風 (Ocean Indigenous Style) CSS 定制
+    # ☁️ ☁️ 大自然天空雲朵主題風格 (Nature Sky & Cloud Theme) CSS ☁️ ☁️
     st.markdown("""
     <style>
-    /* 全域背景色 - 淺海洋漸層 */
+    /* 全局背景：漸層天空藍 */
     .stApp {
-        background: linear-gradient(180deg, #E0F2FE 0%, #F0F9FF 50%, #FFFFFF 100%);
-        color: #0F172A;
+        background: linear-gradient(180deg, #E0F2FE 0%, #BAE6FD 35%, #F0F9FF 100%);
+        background-attachment: fixed;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
 
-    /* 頂部標題區域與原民波浪紋飾效果 */
-    .ocean-header {
-        background: linear-gradient(135deg, #0284C7 0%, #0369A1 50%, #0F172A 100%);
-        padding: 24px;
-        border-radius: 16px;
-        color: white;
-        text-align: center;
-        box-shadow: 0 10px 25px -5px rgba(3, 105, 161, 0.3);
-        border-bottom: 5px solid #F97316; /* 暖橘色原民編織裝飾線 */
-        margin-bottom: 20px;
-    }
-
-    /* 題目卡片風格：海洋深藍邊框與高質感陰影 */
+    /* 雲朵卡片樣式：白雲浮雕質感與圓潤弧度 */
     .quiz-card {
-        background-color: #FFFFFF;
-        padding: 26px;
-        border-radius: 16px;
-        border-left: 6px solid #0284C7;
-        border-right: 1px solid #E2E8F0;
-        border-top: 1px solid #E2E8F0;
-        border-bottom: 1px solid #E2E8F0;
-        box-shadow: 0 8px 20px rgba(2, 132, 199, 0.08);
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(8px);
+        padding: 28px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        box-shadow: 0 10px 25px -5px rgba(186, 230, 253, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
         margin-top: 18px;
-        margin-bottom: 24px;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        margin-bottom: 28px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        color: #1E293B;
     }
-    
     .quiz-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 12px 24px rgba(2, 132, 199, 0.12);
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px -5px rgba(147, 197, 253, 0.6), 0 10px 12px -5px rgba(0, 0, 0, 0.04);
     }
 
-    /* 原民編織分隔線 */
+    /* 標題與文字風格 */
+    h1 {
+        color: #0369A1 !important;
+        font-weight: 800 !important;
+        text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8);
+    }
+    h2, h3, h4 {
+        color: #0284C7 !important;
+    }
+
+    /* 分隔線 */
     hr {
-        border: 0;
-        height: 2px;
-        background: linear-gradient(90deg, rgba(2,132,199,0) 0%, rgba(2,132,199,0.8) 50%, rgba(2,132,199,0) 100%);
-        margin: 25px 0;
+        border-top: 2px dashed #93C5FD !important;
+        opacity: 0.5;
     }
 
-    /* 按鈕與表單原民色彩優化 */
-    div.stButton > button {
-        background-color: #0284C7;
-        color: white;
-        border-radius: 8px;
-        border: none;
-        font-weight: bold;
+    /* Radio 選項樣式優化 */
+    div[role="radiogroup"] {
+        background: rgba(240, 249, 255, 0.6);
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid #E0F2FE;
     }
 
-    div.stButton > button:hover {
-        background-color: #0369A1;
-        color: #F0F9FF;
-    }
-
-    /* Toggle 狀態卡片樣式修正 */
-    .stToggle {
+    /* Toggle 開關主題色彩 */
+    div[data-testid="stToggleButton"] {
         color: #0369A1;
+    }
+
+    /* 連結設定 */
+    a {
+        color: #0284C7 !important;
+        text-decoration: none !important;
+        font-weight: 600;
+    }
+    a:hover {
+        color: #0369A1 !important;
+        text-decoration: underline !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    # 🌊 海洋風格 Title Header
-    st.markdown("""
-    <div class="ocean-header">
-        <h1 style="margin:0; font-size: 2.2rem; font-weight: 800;">🌊 族語中高級認證學習平台</h1>
-        <p style="margin-top:8px; font-size: 1rem; opacity: 0.9;">Pilicay to kamaro' - 悠遊海洋．傳承原音</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.title("☁️ 大自然天空認證平台")
+    st.caption("[請選擇練習平台]")
 
     main_options = ["📋 認證考試說明", "🎧 聽力", "🗣️ 口說", "📖 閱讀", "✍️ 寫作"]
     current_tab = st.segmented_control("主選單導覽", main_options, default=None, label_visibility="collapsed")
@@ -500,9 +495,10 @@ def main():
     db = load_question_bank()
 
     if current_tab == "📋 認證考試說明":
+        # 🌟 保留您提供的超連結[cite: 1]
         st.subheader("📋 [認證考試說明](https://lokahsu.ilrdf.org.tw/web_lokahsu/Files/Guide/1_20251211_162558.pdf)")
         st.divider()
-        st.info("🌊 歡迎使用海洋原民風格模考系統！請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫。")
+        st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫。")
 
     elif current_tab == "🎧 聽力":
         st.subheader("🎧 聽力測驗 (pitengil)")
@@ -543,7 +539,7 @@ def main():
             render_section("問答", db)
 
     st.write("---")
-    st.caption(f"🌊 © 2026 中高級認證 App 三一開發團隊 ｜ 海洋原民主題版 ｜ 系統版本： **{APP_VERSION}** ")
+    st.caption(f"© 2026 中高級認證 App 三一開發團隊 ｜ 系統版本： **{APP_VERSION}** ")
 
 if __name__ == "__main__":
     main()
