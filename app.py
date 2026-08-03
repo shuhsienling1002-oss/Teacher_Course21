@@ -5,7 +5,7 @@ import os
 import re
 import io
 
-# 🛡️ 嘗試匯入 gTTS，若環境未安裝則進行容錯處理
+# 🛡️ 嘗試匯入 gTTS，若環境未安裝則進行靜默容錯處理
 try:
     from gTTS import gTTS
     HAS_GTTS = True
@@ -64,7 +64,7 @@ def play_tts(text):
     自動萃取題幹中的阿美語並進行動態發音。
     """
     if not HAS_GTTS:
-        st.warning("⚠️ 系統未安裝 gTTS 套件，請在 requirements.txt 中新增 gTTS 以啟用發音功能。")
+        # 靜默忽略，不產生警告訊息干擾介面
         return
 
     match = re.search(r'「(.*?)」', text)
@@ -85,7 +85,7 @@ def play_tts(text):
         tts.write_to_fp(fp)
         st.audio(fp.getvalue(), format="audio/mp3")
     except Exception as e:
-        st.error("⚠️ 無法生成語音，請確認環境網路連線。")
+        pass
 
 # ==========================================
 # 🧠 動態解析引擎：跨行讀取與穩定分割版
