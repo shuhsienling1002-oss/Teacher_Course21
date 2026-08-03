@@ -3,9 +3,11 @@ import random
 import json
 import os
 import re
+import io
+from gtts import gTTS
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.1.4 (Build 20260727 - Royal Palace Edition)"
+APP_VERSION = "v2.2.0 (Build 20260803 - Dynamic TTS & Exam Guide Link)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -46,6 +48,38 @@ QUIZ_DATA = [
     {"id": 14, "audio_path": "assets/audio/01_listening/listening_words/tengil-a1-14.mp3", "question_text": "聆聽音檔，選出關聯的詞彙：", "options": ["dafak", "a'ayad", "dadaya", "kamaya"], "correct_text": "dadaya"},
     {"id": 15, "audio_path": "assets/audio/01_listening/listening_words/tengil-a1-15.mp3", "question_text": "聆聽音檔，選出關聯的詞彙：", "options": ["sioy", "simal", "sinafel", "simico"], "correct_text": "sinafel"}
 ]
+
+# ==========================================
+# 🎵 新增功能：南島語系動態發音引擎 (TTS)
+# ==========================================
+def play_tts(text):
+    """
+    在上傳實體聲音檔之前，利用印尼語(id)近似南島語系發音規則，
+    自動萃取題幹中的阿美語並進行動態發音。
+    """
+    # 1. 嘗試抓取「」內的阿美語詞彙 (針對選擇題)
+    match = re.search(r'「(.*?)」', text)
+    if match:
+        target_text = match.group(1)
+    else:
+        # 2. 若無引號，過濾掉常見中文題幹與中文字，保留阿美語
+        target_text = re.sub(r'請問.*?中文意思是什麼|的阿美語是哪一個|聆聽音檔.*?|題目：|阿美語：|中文：.*', '', text)
+        target_text = re.sub(r'[\u4e00-\u9fa5]', '', target_text) # 移除所有中文字
+        target_text = re.sub(r'^\d+[\.、]\s*', '', target_text) # 移除題號
+    
+    target_text = target_text.strip()
+    # 如果過濾後為空，則作為 fallback 唸出原文
+    if not target_text:
+        target_text = text 
+        
+    try:
+        # 使用 gTTS 的印尼語發音 (lang='id')，因其 a, i, u, e, o 的發音方式極為接近阿美語
+        tts = gTTS(text=target_text, lang='id')
+        fp = io.BytesIO()
+        tts.write_to_fp(fp)
+        st.audio(fp.getvalue(), format="audio/mp3")
+    except Exception as e:
+        st.error("⚠️ 無法生成語音，請確認環境是否支援 gTTS 或檢查網路連線。")
 
 # ==========================================
 # 🧠 動態解析引擎：跨行讀取與穩定分割版
@@ -133,16 +167,15 @@ def load_question_bank():
     return db
 
 # ==========================================
-# 🎨 終極 UI 渲染邏輯 (物理字串切割，100%保證顯示)
+# 🎨 終極 UI 渲染邏輯 (結合動態 TTS 發音按鈕)
 # ==========================================
 def render_mcq(line, prefix):
-    """渲染選擇題 (修復 split 回傳 list 的問題，並新增聽力題目隱藏功能)"""
+    """渲染選擇題 (新增動態語音按鈕，在上傳音檔前可作為發音輔助)"""
     try:
         if "(A)" not in line:
             st.info(line)
             return
 
-        # 限制分割次數，並明確取值
         parts = line.split("(A)", 1)
         q_part = parts[0].strip()
         rest = "(A)" + parts[1]
@@ -163,13 +196,22 @@ def render_mcq(line, prefix):
             else:
                 ans_str = ans_ana.strip("。 ")
 
-        # 🌟 聽力測驗專屬：隱藏題目文字功能
+        # 🌟 UI 佈局：題目與發音按鈕並列
         is_listening = "聽音選詞" in prefix or "對話理解" in prefix
-        if is_listening:
-            if st.toggle("👁️ 顯示題目文字", key=f"t_show_q_{prefix}"):
+        col_q, col_btn = st.columns([4, 1.5])
+        
+        with col_q:
+            if is_listening:
+                if st.toggle("👁️ 顯示題目文字", key=f"t_show_q_{prefix}"):
+                    st.markdown(f"**{q_part}**")
+                else:
+                    st.markdown("**[文字隱藏中，請點擊右方播放模擬發音]**")
+            else:
                 st.markdown(f"**{q_part}**")
-        else:
-            st.markdown(f"**{q_part}**")
+                
+        with col_btn:
+            if st.button("🔊 模擬發音", key=f"tts_btn_{prefix}"):
+                play_tts(q_part)
         
         # 安全切割四個選項
         opts = []
@@ -212,7 +254,14 @@ def render_reading(line, prefix):
             q_part = parts[0].strip()
             ch_part = parts[1].strip(")")
         
-        st.markdown(f"📖 **{q_part}**")
+        # 🌟 UI 佈局：段落與發音按鈕並列
+        col_q, col_btn = st.columns([4, 1.5])
+        with col_q:
+            st.markdown(f"📖 **{q_part}**")
+        with col_btn:
+            if st.button("🔊 模擬朗讀", key=f"tts_btn_{prefix}"):
+                play_tts(q_part)
+                
         if ch_part:
             if st.toggle("💡 顯示中文翻譯", key=f"t_{prefix}"):
                 st.success(ch_part)
@@ -252,17 +301,25 @@ def render_qa(line, prefix):
         
         q_am = q_am.replace("題目：", " 題目：")
         
-        # 🌟 口說測驗-情境問答專屬：隱藏題目與提示功能
-        is_situational = "情境問答" in prefix
-        if is_situational:
-            if st.toggle("👁️ 顯示題目與提示", key=f"t_show_q_{prefix}"):
+        # 🌟 UI 佈局：題目與發音按鈕並列
+        col_q, col_btn = st.columns([4, 1.5])
+        with col_q:
+            is_situational = "情境問答" in prefix
+            if is_situational:
+                if st.toggle("👁️ 顯示題目與提示", key=f"t_show_q_{prefix}"):
+                    st.markdown(f"🗣️ **{q_am}**")
+                    if ch_hint:
+                        st.caption(f"中文提示：{ch_hint}")
+                else:
+                    st.markdown("**[提示文字隱藏中]**")
+            else:
                 st.markdown(f"🗣️ **{q_am}**")
                 if ch_hint:
                     st.caption(f"中文提示：{ch_hint}")
-        else:
-            st.markdown(f"🗣️ **{q_am}**")
-            if ch_hint:
-                st.caption(f"中文提示：{ch_hint}")
+                    
+        with col_btn:
+            if st.button("🔊 聽取問句", key=f"tts_btn_{prefix}"):
+                play_tts(q_am)
             
         if ans or ana:
             if st.toggle("💡 顯示參考解答", key=f"t_{prefix}"):
@@ -270,6 +327,9 @@ def render_qa(line, prefix):
                 if ans: msg += f"參考解答：{ans}"
                 if ana: msg += f"\n\n分析：{ana}"
                 st.success(msg)
+                if ans:
+                    if st.button("🔊 發音參考解答", key=f"tts_ans_{prefix}"):
+                        play_tts(ans)
     except:
         st.info(line)
 
@@ -309,9 +369,7 @@ def render_picture(line, prefix):
             else:
                 hint = hint_part.strip()
         
-        # 🌟 動態讀取對應圖片邏輯 (假設 prefix 格式為 "看圖表達_0")
         try:
-            # 從 prefix 中解析題號 (index + 1)
             idx = int(prefix.split('_')[-1]) + 1
             img_path_jpg = f"assets/images/picture_{idx}.jpg"
             img_path_png = f"assets/images/picture_{idx}.png"
@@ -323,14 +381,13 @@ def render_picture(line, prefix):
             else:
                 st.info(f"🖼️ 圖片佔位區：若要顯示圖片，請將圖片命名為 `picture_{idx}.jpg` 或 `.png`，並放置於 `assets/images/` 資料夾中。")
         except:
-            pass # 若解析題號失敗則安全跳過
+            pass
 
         st.markdown(f"🖼️ **圖片情境：** {pic}")
         
         if hint:
             st.caption(f"中文提示：{hint}")
             
-        # 加入輸入框作為草稿區
         st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="可以在此輸入您的口說草稿...")
             
         if ans or ana:
@@ -339,6 +396,11 @@ def render_picture(line, prefix):
                 if ans: msg += f"作答參考：{ans}"
                 if ana: msg += f"\n\n重點：{ana}"
                 st.success(msg)
+                
+                # 在看圖表達的解答區提供發音
+                if ans:
+                    if st.button("🔊 發音作答參考", key=f"tts_ans_{prefix}"):
+                        play_tts(ans)
     except:
         st.info(line)
 
@@ -362,12 +424,19 @@ def render_dictation(line, prefix):
             else:
                 ch = text.strip()
         
-        # 加入作答的文字輸入框，模擬真實寫作情境
         st.text_area("請在此作答：", key=f"input_{prefix}", label_visibility="collapsed", placeholder="請在此輸入您聽寫的句子...")
         
-        # 🌟 寫作測驗專屬：隱藏聽寫原文功能
-        if st.toggle("👁️ 顯示聽寫原文", key=f"t_show_dict_{prefix}"):
-            st.markdown(f"✍️ **{am}**")
+        col_q, col_btn = st.columns([4, 1.5])
+        
+        with col_q:
+            if st.toggle("👁️ 顯示聽寫原文", key=f"t_show_dict_{prefix}"):
+                st.markdown(f"✍️ **{am}**")
+            else:
+                st.markdown("**[原文隱藏中，請點擊右側按鈕進行聽寫測試]**")
+                
+        with col_btn:
+            if st.button("🔊 模擬發音", key=f"tts_btn_{prefix}"):
+                play_tts(am)
             
         if ch or ana:
             if st.toggle("💡 顯示翻譯與分析", key=f"t_{prefix}"):
@@ -404,151 +473,28 @@ def render_section(section_name, db):
 # 🚀 應用程式主邏輯 (Main)
 # ==========================================
 def main():
-    st.set_page_config(page_title="中高級認證 - 皇家宮廷版", page_icon="👑", layout="centered", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="中高級認證", page_icon="🎓", layout="centered", initial_sidebar_state="collapsed")
 
-    # 🏰 歐洲華麗古典宮廷風格 (Baroque Royal Imperial Palace Style) CSS
+    # 極簡北歐冷調風 (Minimalist Nordic Cold Tone) CSS
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Noto+Serif+TC:wght@400;600;700&display=swap');
-
-    /* 全局背景與字型 - 皇家羊皮紙與古典金框風格 */
-    .stApp {
-        background: linear-gradient(135deg, #fbf7ee 0%, #f4ebd9 100%);
-        font-family: 'Noto Serif TC', 'Cinzel', 'Georgia', serif;
-        color: #2b1e17;
-    }
-
-    /* 頂部標題宮廷徽章風格 */
-    .royal-header {
-        text-align: center;
-        background: linear-gradient(180deg, #4a0e17 0%, #2a050b 100%);
-        border: 2px solid #d4af37;
-        border-radius: 8px;
-        padding: 24px 20px;
-        margin-bottom: 25px;
-        box-shadow: 0 8px 25px rgba(74, 14, 23, 0.25), inset 0 0 15px rgba(212, 175, 55, 0.2);
-        position: relative;
-    }
-    
-    .royal-header::before, .royal-header::after {
-        content: "❖";
-        color: #d4af37;
-        font-size: 20px;
-        position: absolute;
-        top: 8px;
-    }
-    .royal-header::before { left: 12px; }
-    .royal-header::after { right: 12px; }
-
-    .royal-title {
-        color: #f9f3e3;
-        font-family: 'Cinzel', 'Noto Serif TC', serif;
-        font-size: 2.2rem;
-        font-weight: 700;
-        letter-spacing: 2px;
-        margin: 0;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.6), 0 0 10px rgba(212,175,55,0.4);
-    }
-
-    .royal-subtitle {
-        color: #d4af37;
-        font-size: 0.95rem;
-        letter-spacing: 1.5px;
-        margin-top: 6px;
-        font-style: italic;
-    }
-
-    /* 題目卡片：金邊宮廷典雅框 */
     .quiz-card {
-        background: #fffdf9;
-        border: 1px solid #c5a059;
-        border-radius: 10px;
-        padding: 26px;
-        margin-top: 18px;
-        margin-bottom: 26px;
-        box-shadow: 0 6px 20px rgba(43, 30, 23, 0.08), inset 0 0 8px rgba(212, 175, 55, 0.05);
-        position: relative;
+        background-color: #F8F9FA;
+        padding: 24px;
+        border-radius: 12px;
+        border: 1px solid #E9ECEF;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        margin-top: 15px;
+        margin-bottom: 25px;
         transition: all 0.3s ease;
+        color: #343A40;
     }
-    .quiz-card:hover {
-        border-color: #d4af37;
-        box-shadow: 0 8px 28px rgba(74, 14, 23, 0.12), inset 0 0 12px rgba(212, 175, 55, 0.1);
-    }
-    .quiz-card::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #8b0000, #d4af37, #8b0000);
-        border-top-left-radius: 9px;
-        border-top-right-radius: 9px;
-    }
-
-    /* st.segmented_control & st.radio 樣式微調 */
-    div[data-baseweb="segmented-control"] {
-        background-color: #ede3d1 !important;
-        border: 1px solid #c5a059 !important;
-        border-radius: 8px !important;
-        padding: 4px !important;
-    }
-    
-    button[data-baseweb="button"] {
-        font-family: 'Noto Serif TC', serif !important;
-    }
-
-    /* Toggle & Text Input 美化 */
-    div[role="radiogroup"] {
-        background: #fbf8f1;
-        padding: 12px 16px;
-        border-radius: 8px;
-        border: 1px dashed #c5a059;
-        margin-top: 8px;
-    }
-
-    .stTextArea textarea {
-        background-color: #faf6ed !important;
-        border: 1px solid #c5a059 !important;
-        color: #2b1e17 !important;
-        font-family: 'Noto Serif TC', serif !important;
-        border-radius: 6px !important;
-    }
-    .stTextArea textarea:focus {
-        border-color: #8b0000 !important;
-        box-shadow: 0 0 8px rgba(139, 0, 0, 0.2) !important;
-    }
-
-    /* 成功與提示框宮廷化 */
-    .stAlert {
-        border-radius: 8px !important;
-        border: 1px solid #c5a059 !important;
-    }
-
-    /* 分隔線 */
-    hr {
-        border-top: 1px solid #c5a059 !important;
-        opacity: 0.5;
-    }
-
-    /* 頁尾 */
-    .royal-footer {
-        text-align: center;
-        color: #6b5344;
-        font-size: 0.85rem;
-        padding: 15px 0;
-        font-family: 'Cinzel', 'Noto Serif TC', serif;
-    }
+    hr { border-top: 1px solid #E9ECEF; }
     </style>
     """, unsafe_allow_html=True)
 
-    # 👑 宮廷風格頂部 Banner
-    st.markdown("""
-    <div class="royal-header">
-        <div class="royal-title">⚜️ 皇家中高級認證殿堂 ⚜️</div>
-        <div class="royal-subtitle">ACADEMIA REGIA • EXCELLENTIA LANGUAGE SYSTEM</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.title("🎓 中高級認證")
+    st.caption("[請選擇練習平台]")
 
     main_options = ["📋 認證考試說明", "🎧 聽力", "🗣️ 口說", "📖 閱讀", "✍️ 寫作"]
     current_tab = st.segmented_control("主選單導覽", main_options, default=None, label_visibility="collapsed")
@@ -566,10 +512,9 @@ def main():
     db = load_question_bank()
 
     if current_tab == "📋 認證考試說明":
-        # 🌟 更新這裡：加入您提供的超連結
         st.subheader("📋 [認證考試說明](https://lokahsu.ilrdf.org.tw/web_lokahsu/Files/Guide/1_20251211_162558.pdf)")
         st.divider()
-        st.info("🏛️ 歡迎蒞臨認證殿堂。請透過上方宮廷導覽列選擇您要進行的測驗項目。系統將自動從皇家資料庫載入完整題庫。")
+        st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫，並附帶南島語系模擬發音按鈕。")
 
     elif current_tab == "🎧 聽力":
         st.subheader("🎧 聽力測驗 (pitengil)")
@@ -610,7 +555,7 @@ def main():
             render_section("問答", db)
 
     st.write("---")
-    st.markdown(f'<div class="royal-footer">© 2026 中高級認證 App 三一皇家開發團隊 ｜ 殿堂版本： <b>{APP_VERSION}</b></div>', unsafe_allow_html=True)
+    st.caption(f"© 2026 中高級認證 App 三一開發團隊 ｜ 系統版本： **{APP_VERSION}** ")
 
 if __name__ == "__main__":
     main()
