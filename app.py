@@ -7,7 +7,7 @@ import io
 from gtts import gTTS
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.2.5 (Build 20260803 - Dynamic TTS with Stress & 1.0x Speed Hack)"
+APP_VERSION = "v2.2.0 (Build 20260803 - Dynamic TTS & Exam Guide Link)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -50,13 +50,12 @@ QUIZ_DATA = [
 ]
 
 # ==========================================
-# 🎵 新增功能：南島語系動態發音引擎 (TTS) - 包含字尾重音 Hack 與 1.0 倍速 Hack
+# 🎵 新增功能：南島語系動態發音引擎 (TTS)
 # ==========================================
 def play_tts(text):
     """
-    在上傳實體聲音檔之前，自動萃取題幹中的阿美語並進行動態發音。
-    並使用正則表達式強制把「最後一個音節」母音雙寫加驚嘆號，誘發重音。
-    最後利用 HTML/JS 強制 1.0 倍速播放。
+    在上傳實體聲音檔之前，利用印尼語(id)近似南島語系發音規則，
+    自動萃取題幹中的阿美語並進行動態發音。
     """
     # 1. 嘗試抓取「」內的阿美語詞彙 (針對選擇題)
     match = re.search(r'「(.*?)」', text)
@@ -69,49 +68,16 @@ def play_tts(text):
         target_text = re.sub(r'^\d+[\.、]\s*', '', target_text) # 移除題號
     
     target_text = target_text.strip()
-    
-    # --- 🌟 重音魔法 Hack 區塊 ---
-    target_text_for_tts = target_text
-    if target_text_for_tts:
-        stressed_words = []
-        for word in target_text_for_tts.split():
-            # 尋找單字中的最後一個母音 (a, e, i, o, u)，將其雙寫，並在單字結尾加上驚嘆號
-            match_vowel = re.search(r'([aeiouAEIOU])([^aeiouAEIOU]*)$', word)
-            if match_vowel:
-                stressed_word = re.sub(r'([aeiouAEIOU])([^aeiouAEIOU]*)$', r'\1\1\2!', word)
-                stressed_words.append(stressed_word)
-            else:
-                stressed_words.append(word)
-        target_text_for_tts = " ".join(stressed_words)
-    else:
-        target_text_for_tts = text 
+    # 如果過濾後為空，則作為 fallback 唸出原文
+    if not target_text:
+        target_text = text 
         
     try:
-        # 使用 gTTS 的印尼語發音 (lang='id')
-        tts = gTTS(text=target_text_for_tts, lang='id', slow=False)
+        # 使用 gTTS 的印尼語發音 (lang='id')，因其 a, i, u, e, o 的發音方式極為接近阿美語
+        tts = gTTS(text=target_text, lang='id')
         fp = io.BytesIO()
         tts.write_to_fp(fp)
-        
-        # --- 🌟 語速魔法 Hack 區塊 ---
-        import base64
-        import streamlit.components.v1 as components
-        
-        # 將音檔轉為 base64 編碼
-        b64 = base64.b64encode(fp.getvalue()).decode()
-        
-        # 透過 HTML 與 JavaScript 強制設定 playbackRate = 1.0
-        audio_html = f"""
-            <audio id="tts-audio" controls autoplay style="width: 100%;">
-                <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
-            </audio>
-            <script>
-                var audio = document.getElementById('tts-audio');
-                audio.playbackRate = 1.0;
-            </script>
-        """
-        # 使用 components 渲染以確保 JavaScript 成功執行
-        components.html(audio_html, height=60)
-        
+        st.audio(fp.getvalue(), format="audio/mp3")
     except Exception as e:
         st.error("⚠️ 無法生成語音，請確認環境是否支援 gTTS 或檢查網路連線。")
 
@@ -431,6 +397,7 @@ def render_picture(line, prefix):
                 if ana: msg += f"\n\n重點：{ana}"
                 st.success(msg)
                 
+                # 在看圖表達的解答區提供發音
                 if ans:
                     if st.button("🔊 發音作答參考", key=f"tts_ans_{prefix}"):
                         play_tts(ans)
