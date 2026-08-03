@@ -4,10 +4,10 @@ import json
 import os
 import re
 import io
-from gtts import gTTS
+from gTTS import gTTS
 
-# 🚀 全域系統版本號
-APP_VERSION = "v2.2.0 (Build 20260803 - Dynamic TTS & Exam Guide Link)"
+# 🚀 全域系統版本號 - 海洋風格版
+APP_VERSION = "v2.2.0-Ocean (Build 20260803 - Ocean Breeze Edition)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -57,23 +57,19 @@ def play_tts(text):
     在上傳實體聲音檔之前，利用印尼語(id)近似南島語系發音規則，
     自動萃取題幹中的阿美語並進行動態發音。
     """
-    # 1. 嘗試抓取「」內的阿美語詞彙 (針對選擇題)
     match = re.search(r'「(.*?)」', text)
     if match:
         target_text = match.group(1)
     else:
-        # 2. 若無引號，過濾掉常見中文題幹與中文字，保留阿美語
         target_text = re.sub(r'請問.*?中文意思是什麼|的阿美語是哪一個|聆聽音檔.*?|題目：|阿美語：|中文：.*', '', text)
-        target_text = re.sub(r'[\u4e00-\u9fa5]', '', target_text) # 移除所有中文字
-        target_text = re.sub(r'^\d+[\.、]\s*', '', target_text) # 移除題號
+        target_text = re.sub(r'[\u4e00-\u9fa5]', '', target_text)
+        target_text = re.sub(r'^\d+[\.、]\s*', '', target_text)
     
     target_text = target_text.strip()
-    # 如果過濾後為空，則作為 fallback 唸出原文
     if not target_text:
         target_text = text 
         
     try:
-        # 使用 gTTS 的印尼語發音 (lang='id')，因其 a, i, u, e, o 的發音方式極為接近阿美語
         tts = gTTS(text=target_text, lang='id')
         fp = io.BytesIO()
         tts.write_to_fp(fp)
@@ -124,7 +120,6 @@ def load_question_bank():
     if not file_loaded:
         return db
 
-    # 使用緩衝區將跨行的題目合併為單一字串
     current_section = None
     current_question = []
 
@@ -137,12 +132,10 @@ def load_question_bank():
 
     for line in target_content.split("\n"):
         line = line.strip()
-        # 遇到空行代表題目結束，存入題庫
         if not line:
             save_question()
             continue
             
-        # 判斷是否為題型切換標題
         if "一、選擇題（聽音選詞）" in line: save_question(); current_section = "聽音選詞"
         elif "二、選擇題（對話理解）" in line: save_question(); current_section = "對話理解"
         elif "三、段落朗讀" in line: save_question(); current_section = "段落朗讀"
@@ -153,24 +146,22 @@ def load_question_bank():
         elif "八、句子聽寫" in line: save_question(); current_section = "句子聽寫"
         elif "九、問答" in line: save_question(); current_section = "問答"
         
-        # 開頭為數字代表新題目的開始
         elif re.match(r'^\d+[\.、]', line):
             save_question()
             current_question.append(line)
-        # 屬於目前題目的後續內容（選項或答案）
         else:
             if current_question:
                 current_question.append(line)
                 
-    save_question() # 儲存最後一題
+    save_question()
             
     return db
 
 # ==========================================
-# 🎨 終極 UI 渲染邏輯 (結合動態 TTS 發音按鈕)
+# 🎨 UI 渲染邏輯 (結合海洋風格與動態 TTS)
 # ==========================================
 def render_mcq(line, prefix):
-    """渲染選擇題 (新增動態語音按鈕，在上傳音檔前可作為發音輔助)"""
+    """渲染選擇題 (海洋風格動態語音按鈕與卡片)"""
     try:
         if "(A)" not in line:
             st.info(line)
@@ -196,7 +187,6 @@ def render_mcq(line, prefix):
             else:
                 ans_str = ans_ana.strip("。 ")
 
-        # 🌟 UI 佈局：題目與發音按鈕並列
         is_listening = "聽音選詞" in prefix or "對話理解" in prefix
         col_q, col_btn = st.columns([4, 1.5])
         
@@ -205,7 +195,7 @@ def render_mcq(line, prefix):
                 if st.toggle("👁️ 顯示題目文字", key=f"t_show_q_{prefix}"):
                     st.markdown(f"**{q_part}**")
                 else:
-                    st.markdown("**[文字隱藏中，請點擊右方播放模擬發音]**")
+                    st.markdown("**[文字隱藏中，請點擊右方聆聽模擬海浪發音]**")
             else:
                 st.markdown(f"**{q_part}**")
                 
@@ -213,7 +203,6 @@ def render_mcq(line, prefix):
             if st.button("🔊 模擬發音", key=f"tts_btn_{prefix}"):
                 play_tts(q_part)
         
-        # 安全切割四個選項
         opts = []
         for tag in ["(A)", "(B)", "(C)", "(D)"]:
             if tag in opts_str:
@@ -254,7 +243,6 @@ def render_reading(line, prefix):
             q_part = parts[0].strip()
             ch_part = parts[1].strip(")")
         
-        # 🌟 UI 佈局：段落與發音按鈕並列
         col_q, col_btn = st.columns([4, 1.5])
         with col_q:
             st.markdown(f"📖 **{q_part}**")
@@ -301,7 +289,6 @@ def render_qa(line, prefix):
         
         q_am = q_am.replace("題目：", " 題目：")
         
-        # 🌟 UI 佈局：題目與發音按鈕並列
         col_q, col_btn = st.columns([4, 1.5])
         with col_q:
             is_situational = "情境問答" in prefix
@@ -397,7 +384,6 @@ def render_picture(line, prefix):
                 if ana: msg += f"\n\n重點：{ana}"
                 st.success(msg)
                 
-                # 在看圖表達的解答區提供發音
                 if ans:
                     if st.button("🔊 發音作答參考", key=f"tts_ans_{prefix}"):
                         play_tts(ans)
@@ -473,30 +459,72 @@ def render_section(section_name, db):
 # 🚀 應用程式主邏輯 (Main)
 # ==========================================
 def main():
-    st.set_page_config(page_title="中高級認證", page_icon="🎓", layout="centered", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title="阿美語中高級認證 - 海洋風學習平台", page_icon="🌊", layout="centered", initial_sidebar_state="collapsed")
 
-    # 極簡北歐冷調風 (Minimalist Nordic Cold Tone) CSS
+    # 🌊 太平洋湛藍海洋風格 (Ocean Breeze Theme) CSS
     st.markdown("""
     <style>
-    .quiz-card {
-        background-color: #F8F9FA;
-        padding: 24px;
-        border-radius: 12px;
-        border: 1px solid #E9ECEF;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        margin-top: 15px;
-        margin-bottom: 25px;
-        transition: all 0.3s ease;
-        color: #343A40;
+    /* 全局背景色與深海漸層 */
+    .stApp {
+        background: linear-gradient(180deg, #eef7fa 0%, #e0f2fe 100%);
+        color: #0f172a;
     }
-    hr { border-top: 1px solid #E9ECEF; }
+    
+    /* 標題樣式 */
+    h1 {
+        color: #0369a1 !important;
+        font-weight: 800;
+        text-shadow: 1px 1px 2px rgba(0, 119, 182, 0.15);
+    }
+    h2, h3 {
+        color: #0284c7 !important;
+    }
+    
+    /* 海洋風題庫卡片 */
+    .quiz-card {
+        background: #ffffff;
+        padding: 24px;
+        border-radius: 16px;
+        border-left: 6px solid #0284c7;
+        border-top: 1px solid #bae6fd;
+        border-right: 1px solid #bae6fd;
+        border-bottom: 1px solid #bae6fd;
+        box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.08), 0 8px 10px -6px rgba(2, 132, 199, 0.04);
+        margin-top: 18px;
+        margin-bottom: 25px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .quiz-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px -5px rgba(2, 132, 199, 0.15);
+    }
+    
+    /* 按鈕樣式（海浪漸層） */
+    .stButton > button {
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+        color: white !important;
+        border-radius: 10px;
+        border: none;
+        font-weight: 600;
+        box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.3);
+        transition: all 0.2s ease;
+    }
+    .stButton > button:hover {
+        background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+        box-shadow: 0 6px 12px -2px rgba(2, 132, 199, 0.4);
+    }
+    
+    /* 分隔線 */
+    hr { 
+        border-top: 2px dashed #7dd3fc; 
+    }
     </style>
     """, unsafe_allow_html=True)
 
-    st.title("🎓 中高級認證")
-    st.caption("[請選擇練習平台]")
+    st.title("🌊 阿美語中高級認證 (Riyar Ocean Edition)")
+    st.caption("🌊 「’Aray to riyar」—— 感受太平洋海風的阿美族語學習之旅")
 
-    main_options = ["📋 認證考試說明", "🎧 聽力", "🗣️ 口說", "📖 閱讀", "✍️ 寫作"]
+    main_options = ["📋 認證考試說明", "🎧 聽力 (Pitengil)", "🗣️ 口說 (Pisowal)", "📖 閱讀 (Piasip)", "✍️ 寫作 (Pitilid)"]
     current_tab = st.segmented_control("主選單導覽", main_options, default=None, label_visibility="collapsed")
 
     if "previous_tab" not in st.session_state:
@@ -514,10 +542,10 @@ def main():
     if current_tab == "📋 認證考試說明":
         st.subheader("📋 [認證考試說明](https://lokahsu.ilrdf.org.tw/web_lokahsu/Files/Guide/1_20251211_162558.pdf)")
         st.divider()
-        st.info("請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫，並附帶南島語系模擬發音按鈕。")
+        st.info("🌊 歡迎來到海洋風格學習平台！請透過上方導覽列選擇您要進行的測驗項目。系統將自動從資料庫載入完整題庫，並附帶南島語系模擬發音按鈕。")
 
-    elif current_tab == "🎧 聽力":
-        st.subheader("🎧 聽力測驗 (pitengil)")
+    elif current_tab == "🎧 聽力 (Pitengil)":
+        st.subheader("🎧 聽力測驗 (Pitengil)")
         st.divider()
         listening_sub = st.radio("題型選擇：", ["選擇題-聽音選詞", "選擇題-對話理解"], horizontal=True)
         if listening_sub == "選擇題-聽音選詞":
@@ -525,8 +553,8 @@ def main():
         elif listening_sub == "選擇題-對話理解":
             render_section("對話理解", db)
 
-    elif current_tab == "🗣️ 口說":
-        st.subheader("🗣️ 口說測驗 (pisowal)")
+    elif current_tab == "🗣️ 口說 (Pisowal)":
+        st.subheader("🗣️ 口說測驗 (Pisowal)")
         st.divider()
         speaking_sub = st.radio("題型選擇：", ["段落朗讀", "情境問答", "看圖表達"], horizontal=True)
         if speaking_sub == "段落朗讀":
@@ -536,8 +564,8 @@ def main():
         elif speaking_sub == "看圖表達":
             render_section("看圖表達", db)
 
-    elif current_tab == "📖 閱讀":
-        st.subheader("📖 閱讀測驗 (piasip)")
+    elif current_tab == "📖 閱讀 (Piasip)":
+        st.subheader("📖 閱讀測驗 (Piasip)")
         st.divider()
         reading_sub = st.radio("閱讀題型選擇：", ["選擇題-詞彙語意", "選擇題-語言結構"], horizontal=True)
         if reading_sub == "選擇題-詞彙語意":
@@ -545,8 +573,8 @@ def main():
         elif reading_sub == "選擇題-語言結構":
             render_section("語言結構", db)
 
-    elif current_tab == "✍️ 寫作":
-        st.subheader("✍️ 寫作測驗 (pitilid)")
+    elif current_tab == "✍️ 寫作 (Pitilid)":
+        st.subheader("✍️ 寫作測驗 (Pitilid)")
         st.divider()
         writing_sub = st.radio("寫作題型選擇：", ["句子聽寫", "問答"], horizontal=True)
         if writing_sub == "句子聽寫":
@@ -555,7 +583,7 @@ def main():
             render_section("問答", db)
 
     st.write("---")
-    st.caption(f"© 2026 中高級認證 App 三一開發團隊 ｜ 系統版本： **{APP_VERSION}** ")
+    st.caption(f"🌊 © 2026 阿美語中高級認證 App ｜ 太平洋海洋風格版 ： **{APP_VERSION}** ")
 
 if __name__ == "__main__":
     main()
