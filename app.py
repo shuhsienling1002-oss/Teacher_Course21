@@ -7,7 +7,7 @@ import io
 from gtts import gTTS
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.2.1 (Build 20260803 - Dynamic TTS with Stress Hack)"
+APP_VERSION = "v2.2.2 (Build 20260803 - Dynamic TTS with Stress Hack & Explicit Speed)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -87,8 +87,9 @@ def play_tts(text):
         target_text_for_tts = text 
         
     try:
-        # 使用 gTTS 的印尼語發音 (lang='id')，並送入加工後的重音字串
-        tts = gTTS(text=target_text_for_tts, lang='id')
+        # 使用 gTTS 的印尼語發音 (lang='id')
+        # 明確加上 slow=False 確保系統以最大預設速度播放
+        tts = gTTS(text=target_text_for_tts, lang='id', slow=False)
         fp = io.BytesIO()
         tts.write_to_fp(fp)
         st.audio(fp.getvalue(), format="audio/mp3")
