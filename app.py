@@ -4,7 +4,13 @@ import json
 import os
 import re
 import io
-from gTTS import gTTS
+
+# 🛡️ 嘗試匯入 gTTS，若環境未安裝則進行容錯處理
+try:
+    from gTTS import gTTS
+    HAS_GTTS = True
+except ImportError:
+    HAS_GTTS = False
 
 # 🚀 全域系統版本號 - 海洋風格版
 APP_VERSION = "v2.2.0-Ocean (Build 20260803 - Ocean Breeze Edition)"
@@ -57,6 +63,10 @@ def play_tts(text):
     在上傳實體聲音檔之前，利用印尼語(id)近似南島語系發音規則，
     自動萃取題幹中的阿美語並進行動態發音。
     """
+    if not HAS_GTTS:
+        st.warning("⚠️ 系統未安裝 gTTS 套件，請在 requirements.txt 中新增 gTTS 以啟用發音功能。")
+        return
+
     match = re.search(r'「(.*?)」', text)
     if match:
         target_text = match.group(1)
@@ -75,7 +85,7 @@ def play_tts(text):
         tts.write_to_fp(fp)
         st.audio(fp.getvalue(), format="audio/mp3")
     except Exception as e:
-        st.error("⚠️ 無法生成語音，請確認環境是否支援 gTTS 或檢查網路連線。")
+        st.error("⚠️ 無法生成語音，請確認環境網路連線。")
 
 # ==========================================
 # 🧠 動態解析引擎：跨行讀取與穩定分割版
