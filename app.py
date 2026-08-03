@@ -7,7 +7,7 @@ import io
 from gtts import gTTS
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.2.0 (Build 20260803 - Dynamic TTS & Exam Guide Link)"
+APP_VERSION = "v2.2.1 (Build 20260803 - Dynamic TTS with Stress Hack)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -50,12 +50,12 @@ QUIZ_DATA = [
 ]
 
 # ==========================================
-# 🎵 新增功能：南島語系動態發音引擎 (TTS)
+# 🎵 新增功能：南島語系動態發音引擎 (TTS) - 包含字尾重音 Hack
 # ==========================================
 def play_tts(text):
     """
-    在上傳實體聲音檔之前，利用印尼語(id)近似南島語系發音規則，
-    自動萃取題幹中的阿美語並進行動態發音。
+    在上傳實體聲音檔之前，自動萃取題幹中的阿美語並進行動態發音。
+    並使用正則表達式強制把「最後一個音節」母音雙寫加驚嘆號，誘發重音。
     """
     # 1. 嘗試抓取「」內的阿美語詞彙 (針對選擇題)
     match = re.search(r'「(.*?)」', text)
@@ -68,13 +68,27 @@ def play_tts(text):
         target_text = re.sub(r'^\d+[\.、]\s*', '', target_text) # 移除題號
     
     target_text = target_text.strip()
-    # 如果過濾後為空，則作為 fallback 唸出原文
-    if not target_text:
-        target_text = text 
+    
+    # --- 🌟 重音魔法 Hack 區塊 ---
+    target_text_for_tts = target_text
+    if target_text_for_tts:
+        stressed_words = []
+        for word in target_text_for_tts.split():
+            # 尋找單字中的最後一個母音 (a, e, i, o, u)，將其雙寫，並在單字結尾加上驚嘆號
+            # 例如: foting -> fotiing! | tayni -> taynii!
+            match_vowel = re.search(r'([aeiouAEIOU])([^aeiouAEIOU]*)$', word)
+            if match_vowel:
+                stressed_word = re.sub(r'([aeiouAEIOU])([^aeiouAEIOU]*)$', r'\1\1\2!', word)
+                stressed_words.append(stressed_word)
+            else:
+                stressed_words.append(word)
+        target_text_for_tts = " ".join(stressed_words)
+    else:
+        target_text_for_tts = text 
         
     try:
-        # 使用 gTTS 的印尼語發音 (lang='id')，因其 a, i, u, e, o 的發音方式極為接近阿美語
-        tts = gTTS(text=target_text, lang='id')
+        # 使用 gTTS 的印尼語發音 (lang='id')，並送入加工後的重音字串
+        tts = gTTS(text=target_text_for_tts, lang='id')
         fp = io.BytesIO()
         tts.write_to_fp(fp)
         st.audio(fp.getvalue(), format="audio/mp3")
@@ -397,7 +411,6 @@ def render_picture(line, prefix):
                 if ana: msg += f"\n\n重點：{ana}"
                 st.success(msg)
                 
-                # 在看圖表達的解答區提供發音
                 if ans:
                     if st.button("🔊 發音作答參考", key=f"tts_ans_{prefix}"):
                         play_tts(ans)
