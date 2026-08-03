@@ -7,7 +7,7 @@ import io
 from gtts import gTTS
 
 # 🚀 全域系統版本號
-APP_VERSION = "v2.2.4 (Build 20260803 - Dynamic TTS with Stress & 1.5x Speed Hack)"
+APP_VERSION = "v2.2.5 (Build 20260803 - Dynamic TTS with Stress & 1.0x Speed Hack)"
 
 # ==========================================
 # 🛡️ 防腐層：保留指定的原始結構與函數
@@ -50,13 +50,13 @@ QUIZ_DATA = [
 ]
 
 # ==========================================
-# 🎵 新增功能：南島語系動態發音引擎 (TTS) - 包含字尾重音 Hack 與 1.5 倍速 Hack
+# 🎵 新增功能：南島語系動態發音引擎 (TTS) - 包含字尾重音 Hack 與 1.0 倍速 Hack
 # ==========================================
 def play_tts(text):
     """
     在上傳實體聲音檔之前，自動萃取題幹中的阿美語並進行動態發音。
     並使用正則表達式強制把「最後一個音節」母音雙寫加驚嘆號，誘發重音。
-    最後利用 HTML/JS 強制 1.5 倍速播放。
+    最後利用 HTML/JS 強制 1.0 倍速播放。
     """
     # 1. 嘗試抓取「」內的阿美語詞彙 (針對選擇題)
     match = re.search(r'「(.*?)」', text)
@@ -99,14 +99,14 @@ def play_tts(text):
         # 將音檔轉為 base64 編碼
         b64 = base64.b64encode(fp.getvalue()).decode()
         
-        # 透過 HTML 與 JavaScript 強制設定 playbackRate = 1.5
+        # 透過 HTML 與 JavaScript 強制設定 playbackRate = 1.0
         audio_html = f"""
             <audio id="tts-audio" controls autoplay style="width: 100%;">
                 <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
             </audio>
             <script>
                 var audio = document.getElementById('tts-audio');
-                audio.playbackRate = 1.5;
+                audio.playbackRate = 1.0;
             </script>
         """
         # 使用 components 渲染以確保 JavaScript 成功執行
