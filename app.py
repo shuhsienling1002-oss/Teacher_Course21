@@ -65,22 +65,35 @@ def get_audio_filename(prefix):
         section = parts[0]
         idx = int(parts[-1]) + 1 
         
-        # 根據您的需求：統一去 audio/ 資料夾抓取 .m4a 檔案
+        # 統一去 audio/ 資料夾抓取 .m4a 檔案
         base_dir = "audio"
         filename = ""
         
+        # 聽力測驗
         if "聽音選詞" in section:
             filename = f"word_{idx:03d}.m4a"
         elif "對話理解" in section:
             filename = f"dialog_{idx:03d}.m4a"
-        elif "段落朗讀" == section:
+        
+        # 口說測驗
+        elif "段落朗讀" in section:
             filename = f"read_{idx:03d}.m4a"
-        elif "情境問答" == section or "問答" == section:
+        elif "情境問答" in section:
             filename = f"qa_q_{idx:03d}.m4a" # 預設播放題目
-        elif "看圖表達" == section:
+        elif "看圖表達" in section:
             filename = f"pic_a_{idx:03d}.m4a" # 預設播放解答
-        elif "句子聽寫" == section:
+        
+        # 閱讀測驗
+        elif "詞彙語意" in section:
+            filename = f"vocab_{idx:03d}.m4a"
+        elif "語言結構" in section:
+            filename = f"grammar_{idx:03d}.m4a"
+            
+        # 寫作測驗
+        elif "句子聽寫" in section:
             filename = f"dict_{idx:03d}.m4a"
+        elif "問答" == section:
+            filename = f"write_qa_q_{idx:03d}.m4a" # 預設播放題目
         
         return os.path.join(base_dir, filename) if filename else None
     except:
@@ -94,10 +107,16 @@ def play_tts(text, prefix=None, is_ans=False):
     """
     audio_path = None
     if prefix:
-        # 特殊處理：情境問答的解答發音
-        if is_ans and ("情境問答" in prefix or "問答" in prefix):
+        # 特殊處理：情境問答、看圖表達與問答的解答發音
+        if is_ans and "情境問答" in prefix:
             idx = int(prefix.split('_')[-1]) + 1
             audio_path = os.path.join("audio", f"qa_a_{idx:03d}.m4a")
+        elif is_ans and "看圖表達" in prefix:
+            idx = int(prefix.split('_')[-1]) + 1
+            audio_path = os.path.join("audio", f"pic_a_{idx:03d}.m4a")
+        elif is_ans and prefix.startswith("問答"):
+            idx = int(prefix.split('_')[-1]) + 1
+            audio_path = os.path.join("audio", f"write_qa_a_{idx:03d}.m4a")
         else:
             audio_path = get_audio_filename(prefix)
             
@@ -446,7 +465,7 @@ def render_picture(line, prefix):
                 
                 if ans:
                     if st.button("🔊 發音作答參考", key=f"tts_ans_{prefix}"):
-                        play_tts(ans, prefix=prefix)
+                        play_tts(ans, prefix=prefix, is_ans=True)
     except:
         st.info(line)
 
