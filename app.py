@@ -600,7 +600,7 @@ def main():
     </style>
     """, unsafe_allow_html=True)
 
-    st.title("🌊 阿美語中高級認證 (Riyar Ocean Edition)")
+    st.title("🌊 阿美語中高級認證")
     st.caption("🌊 「’Aray to riyar」—— 感受太平洋海風的阿美族語學習之旅")
 
     main_options = ["📋 認證考試說明", "🎧 聽力 (Pitengil)", "🗣️ 口說 (Pisowal)", "📖 閱讀 (Piasip)", "✍️ 寫作 (Pitilid)"]
